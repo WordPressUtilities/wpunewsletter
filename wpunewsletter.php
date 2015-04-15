@@ -3,7 +3,7 @@
 /*
 Plugin Name: WP Utilities Newsletter
 Description: Allow subscriptions to a newsletter.
-Version: 1.4.1
+Version: 1.4.2
 Author: Darklg
 Author URI: http://darklg.me/
 License: MIT License
@@ -33,8 +33,7 @@ License URI: http://opensource.org/licenses/MIT
 $wpunewsletteradmin_messages = array();
 $wpunewsletter_messages = array();
 
-class WPUNewsletter
-{
+class WPUNewsletter {
     public $table_name;
     function __construct() {
         global $wpdb;
@@ -106,7 +105,8 @@ class WPUNewsletter
             foreach ($results as $result) {
                 echo '<p>' . $result->id . ' - ' . $result->email . '</p>';
             }
-        } else {
+        }
+        else {
             echo '<p>' . __('No subscriber for now.', 'wpunewsletter') . '</p>';
         }
     }
@@ -154,7 +154,8 @@ class WPUNewsletter
 
             // - Display blank slate message
             echo '<p>' . __('No subscriber for now.', 'wpunewsletter') . '</p>';
-        } else {
+        }
+        else {
             echo '<form action="" method="post">';
 
             // - Display results
@@ -265,8 +266,9 @@ class WPUNewsletter
             // Is it already in our base ?
             $testbase = $wpdb->get_row($wpdb->prepare('SELECT email FROM ' . $this->table_name . ' WHERE email = %s', $_POST['wpunewsletter_email']));
             if (isset($testbase->email)) {
-                $wpunewsletter_messages[] = __('This mail is already registered', 'wpunewsletter');
-            } else {
+                $wpunewsletter_messages[] = apply_filters('wpunewsletter_message_register_already',__('This mail is already registered', 'wpunewsletter'));
+            }
+            else {
                 $secretkey = md5(microtime() . $_POST['wpunewsletter_email']);
                 $insert = $wpdb->insert($this->table_name, array(
                     'email' => $_POST['wpunewsletter_email'],
@@ -274,10 +276,11 @@ class WPUNewsletter
                     'secretkey' => $secretkey
                 ));
                 if ($insert === false) {
-                    $wpunewsletter_messages[] = __("This mail can't be registered", 'wpunewsletter');
-                } else {
+                    $wpunewsletter_messages[] = apply_filters('wpunewsletter_message_register_nok', __("This mail can't be registered", 'wpunewsletter'));
+                }
+                else {
                     $this->send_confirmation_email($_POST['wpunewsletter_email'], $secretkey);
-                    $wpunewsletter_messages[] = __('This mail is now registered', 'wpunewsletter');
+                    $wpunewsletter_messages[] = apply_filters('wpunewsletter_message_register_ok', __('This mail is now registered', 'wpunewsletter'));
                 }
             }
         }
@@ -402,8 +405,7 @@ add_action('widgets_init', 'wpunewsletter_form_register_widgets');
 function wpunewsletter_form_register_widgets() {
     register_widget('wpunewsletter_form');
 }
-class wpunewsletter_form extends WP_Widget
-{
+class wpunewsletter_form extends WP_Widget {
     function wpunewsletter_form() {
         parent::WP_Widget(false, '[WPU] Newsletter Form', array(
             'description' => 'Newsletter Form'
