@@ -3,7 +3,7 @@
 /*
 Plugin Name: WP Utilities Newsletter
 Description: Allow subscriptions to a newsletter.
-Version: 1.4.0
+Version: 1.4.1
 Author: Darklg
 Author URI: http://darklg.me/
 License: MIT License
@@ -343,11 +343,15 @@ class WPUNewsletter
         add_filter('wp_mail_content_type', array(&$this,
             'html_content'
         ));
-        $confirm_url = site_url() . '?wpunewsletter_key=' . $secretkey . '&amp;wpunewsletter_email=' . $email;
+        $confirm_url = site_url() . '?wpunewsletter_key=' . urlencode($secretkey) . '&amp;wpunewsletter_email=' . urlencode($email);
         $email_title = get_bloginfo('name') . ' - ' . __('Confirm your subscription to our newsletter', 'wpunewsletter');
+
         $email_content = '<p>' . __('Hi !', 'wpunewsletter') . '</p>';
         $email_content.= '<p>' . __('Please click on the link below to confirm your subscription to our newsletter:', 'wpunewsletter');
         $email_content.= '<br /><a href="' . $confirm_url . '">' . $confirm_url . '</a></p>' . '<p>' . __('Thank you !', 'wpunewsletter') . '</p>';
+
+        $email_content = apply_filters('wpunewsletter_confirm_email_content', $email_content, $confirm_url);
+
         wp_mail($email, $email_title, $email_content);
         remove_filter('wp_mail_content_type', array(&$this,
             'html_content'
