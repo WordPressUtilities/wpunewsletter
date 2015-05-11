@@ -3,7 +3,7 @@
 /*
 Plugin Name: WP Utilities Newsletter
 Description: Allow subscriptions to a newsletter.
-Version: 1.4.3
+Version: 1.5
 Author: Darklg
 Author URI: http://darklg.me/
 License: MIT License
@@ -70,6 +70,18 @@ class WPUNewsletter {
         add_action('template_redirect', array(&$this,
             'confirm_address'
         ));
+
+        // Admin boxes
+        add_filter('wpu_options_tabs', array(&$this,
+            'add_tabs'
+        ) , 99, 1);
+        add_filter('wpu_options_boxes', array(&$this,
+            'add_boxes'
+        ) , 99, 1);
+        add_filter('wpu_options_fields', array(&$this,
+            'add_fields'
+        ) , 99, 1);
+
         if (isset($_GET['page']) && $_GET['page'] == 'wpunewsletter') {
             add_action('admin_enqueue_scripts', array(&$this,
                 'enqueue_scripts'
@@ -109,6 +121,41 @@ class WPUNewsletter {
         else {
             echo '<p>' . __('No subscriber for now.', 'wpunewsletter') . '</p>';
         }
+    }
+
+    /* ----------------------------------------------------------
+      Admin Options
+    ---------------------------------------------------------- */
+
+    function add_tabs($tabs) {
+        $tabs['wpunewsletter'] = array(
+            'name' => 'Options Newsletter'
+        );
+        return $tabs;
+    }
+
+    function add_boxes($boxes) {
+        $boxes['wpunewsletter_confirm'] = array(
+            'name' => 'Confirm email',
+            'tab' => 'wpunewsletter'
+        );
+        return $boxes;
+    }
+
+    function add_fields($options) {
+
+        $options['wpunewsletter_useremailfromname'] = array(
+            'label' => __('From name', 'wpunewsletter') ,
+            'type' => 'text',
+            'box' => 'wpunewsletter_confirm'
+        );
+        $options['wpunewsletter_useremailfromaddress'] = array(
+            'label' => __('From address', 'wpunewsletter') ,
+            'type' => 'text',
+            'box' => 'wpunewsletter_confirm'
+        );
+
+        return $options;
     }
 
     /* ----------------------------------------------------------
@@ -266,7 +313,7 @@ class WPUNewsletter {
             // Is it already in our base ?
             $testbase = $wpdb->get_row($wpdb->prepare('SELECT email FROM ' . $this->table_name . ' WHERE email = %s', $_POST['wpunewsletter_email']));
             if (isset($testbase->email)) {
-                $wpunewsletter_messages[] = apply_filters('wpunewsletter_message_register_already',__('This mail is already registered', 'wpunewsletter'));
+                $wpunewsletter_messages[] = apply_filters('wpunewsletter_message_register_already', __('This mail is already registered', 'wpunewsletter'));
             }
             else {
                 $secretkey = md5(microtime() . $_POST['wpunewsletter_email']);
@@ -346,6 +393,12 @@ class WPUNewsletter {
         add_filter('wp_mail_content_type', array(&$this,
             'html_content'
         ));
+        add_filter('wp_mail_from', array(&$this,
+            'wp_mail_from'
+        ));
+        add_filter('wp_mail_from_name', array(&$this,
+            'wp_mail_from_name'
+        ));
         $confirm_url = site_url() . '?wpunewsletter_key=' . urlencode($secretkey) . '&amp;wpunewsletter_email=' . urlencode($email);
         $email_title = get_bloginfo('name') . ' - ' . __('Confirm your subscription to our newsletter', 'wpunewsletter');
 
@@ -359,6 +412,12 @@ class WPUNewsletter {
         wp_mail($email, $email_title, $email_content);
         remove_filter('wp_mail_content_type', array(&$this,
             'html_content'
+        ));
+        remove_filter('wp_mail_from', array(&$this,
+            'wp_mail_from'
+        ));
+        remove_filter('wp_mail_from_name', array(&$this,
+            'wp_mail_from_name'
         ));
     }
 
@@ -394,6 +453,22 @@ class WPUNewsletter {
 
     function html_content() {
         return 'text/html';
+    }
+
+    function wp_mail_from_name($email_name) {
+        $wpunewsletter_useremailfromname = trim(get_option('wpunewsletter_useremailfromname'));
+        if (!empty($wpunewsletter_useremailfromname)) {
+            $email_name = $wpunewsletter_useremailfromname;
+        }
+        return $email_name;
+    }
+
+    function wp_mail_from($email_address) {
+        $wpunewsletter_useremailfromaddress = trim(get_option('wpunewsletter_useremailfromaddress'));
+        if (!empty($wpunewsletter_useremailfromaddress)) {
+            $email_address = $wpunewsletter_useremailfromaddress;
+        }
+        return $email_address;
     }
 }
 
