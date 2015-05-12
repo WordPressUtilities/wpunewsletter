@@ -3,7 +3,7 @@
 /*
 Plugin Name: WP Utilities Newsletter
 Description: Allow subscriptions to a newsletter.
-Version: 1.5
+Version: 1.5.1
 Author: Darklg
 Author URI: http://darklg.me/
 License: MIT License
