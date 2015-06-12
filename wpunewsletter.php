@@ -3,7 +3,7 @@
 /*
 Plugin Name: WP Utilities Newsletter
 Description: Allow subscriptions to a newsletter.
-Version: 1.5.1
+Version: 1.6
 Author: Darklg
 Author URI: http://darklg.me/
 License: MIT License
@@ -34,6 +34,7 @@ $wpunewsletteradmin_messages = array();
 $wpunewsletter_messages = array();
 
 class WPUNewsletter {
+    public $plugin_version = '1.6';
     public $table_name;
     function __construct() {
         global $wpdb;
@@ -64,7 +65,10 @@ class WPUNewsletter {
         add_action('admin_init', array(&$this,
             'export_postAction'
         ));
-        add_action('init', array(&$this,
+        add_action('admin_init', array(&$this,
+            'settings_postAction'
+        ));
+        add_action('template_redirect', array(&$this,
             'postAction'
         ));
         add_action('template_redirect', array(&$this,
@@ -84,9 +88,12 @@ class WPUNewsletter {
 
         if (isset($_GET['page']) && $_GET['page'] == 'wpunewsletter') {
             add_action('admin_enqueue_scripts', array(&$this,
-                'enqueue_scripts'
+                'admin_enqueue_scripts'
             ));
         }
+        add_action('wp_enqueue_scripts', array(&$this,
+            'enqueue_scripts'
+        ));
     }
 
     // Translation
@@ -95,8 +102,13 @@ class WPUNewsletter {
     }
 
     // Admin JS
+    function admin_enqueue_scripts() {
+        wp_enqueue_script('wpunewsletter_admin_js', $this->plugin_url . 'assets/script.js');
+    }
     function enqueue_scripts() {
-        wp_enqueue_script('wpunewsletter_js', $this->plugin_url . 'assets/script.js');
+        wp_enqueue_script('wpunewsletter_js', $this->plugin_url . 'assets/front.js', array(
+            'jquery'
+        ) , $this->plugin_version, 1);
     }
 
     /* ----------------------------------------------------------
@@ -170,6 +182,9 @@ class WPUNewsletter {
         add_submenu_page('wpunewsletter', 'Newsletter - Export', 'Export', 'manage_options', 'wpunewsletter-export', array(&$this,
             'page_content_export'
         ));
+        add_submenu_page('wpunewsletter', 'Newsletter - Settings', 'Settings', 'manage_options', 'wpunewsletter-settings', array(&$this,
+            'page_content_settings'
+        ));
     }
 
     // Admin page content
@@ -207,12 +222,21 @@ class WPUNewsletter {
 
             // - Display results
             echo '<table class="widefat">';
-            $cols = '<tr><th><input type="checkbox" class="wpunewsletter_element_check" name="wpunewsletter_element_check" /></th><th>' . __('ID', 'wpunewsletter') . '</th><th>' . __('Email', 'wpunewsletter') . '</th><th>' . __('Locale', 'wpunewsletter') . '</th><th>' . __('Date', 'wpunewsletter') . '</th></tr>';
+            $cols = '<tr>';
+            $cols.= '<th><input type="checkbox" class="wpunewsletter_element_check" name="wpunewsletter_element_check" /></th>';
+            $cols.= '<th>' . __('ID', 'wpunewsletter') . '</th>';
+            $cols.= '<th>' . __('Email', 'wpunewsletter') . '</th>';
+            $cols.= '<th>' . __('Locale', 'wpunewsletter') . '</th>';
+            $cols.= '<th>' . __('Date', 'wpunewsletter') . '</th>';
+            $cols.= '</tr>';
+
             echo '<thead>' . $cols . '</thead>';
             echo '<tfoot>' . $cols . '</tfoot>';
             foreach ($results as $result) {
                 echo '<tbody><tr>
-            <td style="width: 15px; text-align: right;"><input type="checkbox" class="wpunewsletter_element" name="wpunewsletter_element[]" value="' . $result->id . '" /></td>
+            <td style="width: 15px; text-align: right;">
+            <input type="checkbox" class="wpunewsletter_element" name="wpunewsletter_element[]" value="' . $result->id . '" />
+            </td>
             <td>' . $result->id . '</td>
             <td>' . $result->email . '</td>
             <td>' . $result->locale . '</td>
@@ -309,7 +333,6 @@ class WPUNewsletter {
 
         // If there is a valid email address
         if (isset($_POST['wpunewsletter_email']) && filter_var($_POST['wpunewsletter_email'], FILTER_VALIDATE_EMAIL)) {
-
             // Is it already in our base ?
             $testbase = $wpdb->get_row($wpdb->prepare('SELECT email FROM ' . $this->table_name . ' WHERE email = %s', $_POST['wpunewsletter_email']));
             if (isset($testbase->email)) {
@@ -364,6 +387,36 @@ class WPUNewsletter {
         }
 
         $this->display_message_in_page($message);
+    }
+
+    /* ----------------------------------------------------------
+      Settings
+    ---------------------------------------------------------- */
+
+    function page_content_settings() {
+        echo '<div class="wrap"><h2 class="title">Newsletter - Settings</h2>';
+        echo '<form action="" method="post">';
+        echo '<p>';
+        echo '<label>';
+        echo '<input type="checkbox" name="wpunewsletter_use_jquery_ajax" ' . checked(get_option('wpunewsletter_use_jquery_ajax') , 1, false) . ' value="1" />' . __('Use jQuery AJAX', 'wpunewsletter');
+        echo '</label> ';
+        echo '</p>';
+        echo wp_nonce_field('wpunewsletter_settings', 'wpunewsletter_settings_nonce');
+        echo submit_button(__('Update options', 'wpunewsletter'));
+        echo '</form></div>';
+    }
+
+    function settings_postAction() {
+        $nonce = 'wpunewsletter_settings_nonce';
+        $action = 'wpunewsletter_settings';
+        if (empty($_POST)) {
+            return;
+        }
+        if (!isset($_POST[$nonce]) || !wp_verify_nonce($_POST[$nonce], 'wpunewsletter_settings')) {
+            return;
+        }
+
+        update_option('wpunewsletter_use_jquery_ajax', (isset($_POST['wpunewsletter_use_jquery_ajax']) ? 1 : ''));
     }
 
     /* ----------------------------------------------------------
@@ -495,11 +548,11 @@ class wpunewsletter_form extends WP_Widget {
     function widget($args, $instance) {
         global $wpunewsletter_messages;
 
-        $default_widget_content = '<form action="" method="post"><div>
-            <label for="wpunewsletter_email">' . __('Email', 'wpunewsletter') . '</label>
+        $default_widget_content = '<form id="wpunewsletter-form" action="" method="post"><div>';
+        $default_widget_content .= '<label for="wpunewsletter_email">' . __('Email', 'wpunewsletter') . '</label>
             <input type="email" name="wpunewsletter_email" id="wpunewsletter_email" value="" required />
             <button type="submit" class="cssc-button cssc-button--default">' . __('Register', 'wpunewsletter') . '</button>
-        </div></form>';
+        </div><div class="messages"></div></form>';
 
         echo $args['before_widget'];
         if (!empty($wpunewsletter_messages)) {
