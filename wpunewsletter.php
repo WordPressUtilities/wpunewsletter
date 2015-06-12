@@ -3,7 +3,7 @@
 /*
 Plugin Name: WP Utilities Newsletter
 Description: Allow subscriptions to a newsletter.
-Version: 1.6
+Version: 1.6.1
 Author: Darklg
 Author URI: http://darklg.me/
 License: MIT License
@@ -327,29 +327,63 @@ class WPUNewsletter {
         return $links;
     }
 
+    /* ----------------------------------------------------------
+      Actions
+    ---------------------------------------------------------- */
+
+    function mail_is_subscribed($email) {
+        global $wpdb;
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            return;
+        }
+        $testbase = $wpdb->get_row($wpdb->prepare('SELECT email FROM ' . $this->table_name . ' WHERE email = %s', $email));
+        return isset($testbase->email);
+    }
+
+    function register_mail($email, $send_confirmation_mail = false, $check_subscription = false) {
+        global $wpunewsletter_messages, $wpdb;
+
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            return;
+        }
+
+        // If mail is subscribed
+        if ($check_subscription && $this->mail_is_subscribed($email)) {
+            return;
+        }
+
+        $is_valid = $send_confirmation_mail ? 0 : 1;
+
+        $secretkey = md5(microtime() . $email);
+        $insert = $wpdb->insert($this->table_name, array(
+            'email' => $email,
+            'locale' => get_locale() ,
+            'secretkey' => $secretkey,
+            'is_valid' => $is_valid
+        ));
+
+        if ($send_confirmation_mail && $insert !== false) {
+            $this->send_confirmation_email($email, $secretkey);
+        }
+
+        return $insert;
+    }
+
     // Widget POST Action
     function postAction() {
         global $wpunewsletter_messages, $wpdb;
 
         // If there is a valid email address
-        if (isset($_POST['wpunewsletter_email']) && filter_var($_POST['wpunewsletter_email'], FILTER_VALIDATE_EMAIL)) {
-            // Is it already in our base ?
-            $testbase = $wpdb->get_row($wpdb->prepare('SELECT email FROM ' . $this->table_name . ' WHERE email = %s', $_POST['wpunewsletter_email']));
-            if (isset($testbase->email)) {
+        if (isset($_POST['wpunewsletter_email'])) {
+            if ($this->mail_is_subscribed($_POST['wpunewsletter_email'])) {
                 $wpunewsletter_messages[] = apply_filters('wpunewsletter_message_register_already', __('This mail is already registered', 'wpunewsletter'));
             }
             else {
-                $secretkey = md5(microtime() . $_POST['wpunewsletter_email']);
-                $insert = $wpdb->insert($this->table_name, array(
-                    'email' => $_POST['wpunewsletter_email'],
-                    'locale' => get_locale() ,
-                    'secretkey' => $secretkey
-                ));
-                if ($insert === false) {
+                $subscription = $this->register_mail($_POST['wpunewsletter_email'], true, false);
+                if ($subscription === false) {
                     $wpunewsletter_messages[] = apply_filters('wpunewsletter_message_register_nok', __("This mail can't be registered", 'wpunewsletter'));
                 }
                 else {
-                    $this->send_confirmation_email($_POST['wpunewsletter_email'], $secretkey);
                     $wpunewsletter_messages[] = apply_filters('wpunewsletter_message_register_ok', __('This mail is now registered', 'wpunewsletter'));
                 }
             }
@@ -549,7 +583,7 @@ class wpunewsletter_form extends WP_Widget {
         global $wpunewsletter_messages;
 
         $default_widget_content = '<form id="wpunewsletter-form" action="" method="post"><div>';
-        $default_widget_content .= '<label for="wpunewsletter_email">' . __('Email', 'wpunewsletter') . '</label>
+        $default_widget_content.= '<label for="wpunewsletter_email">' . __('Email', 'wpunewsletter') . '</label>
             <input type="email" name="wpunewsletter_email" id="wpunewsletter_email" value="" required />
             <button type="submit" class="cssc-button cssc-button--default">' . __('Register', 'wpunewsletter') . '</button>
         </div><div class="messages"></div></form>';
