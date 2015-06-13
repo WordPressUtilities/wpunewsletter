@@ -3,7 +3,7 @@
 /*
 Plugin Name: WP Utilities Newsletter
 Description: Allow subscriptions to a newsletter.
-Version: 1.6.1
+Version: 1.7
 Author: Darklg
 Author URI: http://darklg.me/
 License: MIT License
@@ -74,6 +74,12 @@ class WPUNewsletter {
         add_action('template_redirect', array(&$this,
             'confirm_address'
         ));
+
+        // Mailchimp
+
+        add_action('wpunewsletter_mail_registered', array(&$this,
+            'mailchimp_register'
+        ) , 10, 1);
 
         // Admin boxes
         add_filter('wpu_options_tabs', array(&$this,
@@ -331,6 +337,27 @@ class WPUNewsletter {
       Actions
     ---------------------------------------------------------- */
 
+    function mailchimp_register($email_vars) {
+        require_once (dirname(__FILE__) . '/inc/mailchimp/Mailchimp.php');
+
+        $mailchimp_active = get_option('wpunewsletter_mailchimp_active');
+
+        if ($mailchimp_active != 1) {
+            return false;
+        }
+
+        $api_key = get_option('wpunewsletter_mailchimp_apikey');
+        $list_id = get_option('wpunewsletter_mailchimp_listid');
+
+        $Mailchimp = new Mailchimp($api_key);
+        $Mailchimp_Lists = new Mailchimp_Lists($Mailchimp);
+        $subscriber = $Mailchimp_Lists->subscribe($list_id, array(
+            'email' => htmlentities($email_vars['email'])
+        ));
+
+        $is_subscribed = !empty($subscriber['leid']);
+    }
+
     function mail_is_subscribed($email) {
         global $wpdb;
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
@@ -352,15 +379,21 @@ class WPUNewsletter {
             return;
         }
 
+        $secretkey = md5(microtime() . $email);
         $is_valid = $send_confirmation_mail ? 0 : 1;
 
-        $secretkey = md5(microtime() . $email);
-        $insert = $wpdb->insert($this->table_name, array(
+        $email_vars = array(
             'email' => $email,
             'locale' => get_locale() ,
             'secretkey' => $secretkey,
             'is_valid' => $is_valid
-        ));
+        );
+
+        $insert = $wpdb->insert($this->table_name, $email_vars);
+
+        if ($insert !== false) {
+            do_action('wpunewsletter_mail_registered', $email_vars);
+        }
 
         if ($send_confirmation_mail && $insert !== false) {
             $this->send_confirmation_email($email, $secretkey);
@@ -373,13 +406,16 @@ class WPUNewsletter {
     function postAction() {
         global $wpunewsletter_messages, $wpdb;
 
+        $check_subscription = false;
+        $send_confirmation_mail = (get_option('wpunewsletter_send_confirmation_email') == 1);
+
         // If there is a valid email address
         if (isset($_POST['wpunewsletter_email'])) {
             if ($this->mail_is_subscribed($_POST['wpunewsletter_email'])) {
                 $wpunewsletter_messages[] = apply_filters('wpunewsletter_message_register_already', __('This mail is already registered', 'wpunewsletter'));
             }
             else {
-                $subscription = $this->register_mail($_POST['wpunewsletter_email'], true, false);
+                $subscription = $this->register_mail($_POST['wpunewsletter_email'], $send_confirmation_mail, $check_subscription);
                 if ($subscription === false) {
                     $wpunewsletter_messages[] = apply_filters('wpunewsletter_message_register_nok', __("This mail can't be registered", 'wpunewsletter'));
                 }
@@ -430,11 +466,22 @@ class WPUNewsletter {
     function page_content_settings() {
         echo '<div class="wrap"><h2 class="title">Newsletter - Settings</h2>';
         echo '<form action="" method="post">';
-        echo '<p>';
-        echo '<label>';
+        echo '<p><label>';
+        echo '<input type="checkbox" name="wpunewsletter_send_confirmation_email" ' . checked(get_option('wpunewsletter_send_confirmation_email') , 1, false) . ' value="1" />' . __('Send confirmation email', 'wpunewsletter');
+        echo '</label></p>';
+        echo '<p><label>';
         echo '<input type="checkbox" name="wpunewsletter_use_jquery_ajax" ' . checked(get_option('wpunewsletter_use_jquery_ajax') , 1, false) . ' value="1" />' . __('Use jQuery AJAX', 'wpunewsletter');
-        echo '</label> ';
-        echo '</p>';
+        echo '</label></p>';
+        echo '<hr /><h3>Mailchimp</h3>';
+        echo '<p><label>';
+        echo '<input type="checkbox" name="wpunewsletter_mailchimp_active" ' . checked(get_option('wpunewsletter_mailchimp_active') , 1, false) . ' value="1" />' . __('Use Mailchimp', 'wpunewsletter');
+        echo '</label></p>';
+
+        echo '<p><strong><label for="wpunewsletter_mailchimp_apikey">API Key</label></strong><br /><input type="text" id="wpunewsletter_mailchimp_apikey" name="wpunewsletter_mailchimp_apikey" value="' . get_option('wpunewsletter_mailchimp_apikey') . '" /></p>';
+        echo '<p><strong><label for="wpunewsletter_mailchimp_listid">List ID</label></strong><br /><input type="text" id="wpunewsletter_mailchimp_listid" name="wpunewsletter_mailchimp_listid" value="' . get_option('wpunewsletter_mailchimp_listid') . '" /></p>';
+
+        echo '<hr />';
+
         echo wp_nonce_field('wpunewsletter_settings', 'wpunewsletter_settings_nonce');
         echo submit_button(__('Update options', 'wpunewsletter'));
         echo '</form></div>';
@@ -450,7 +497,22 @@ class WPUNewsletter {
             return;
         }
 
+        /* Update checkbox fields */
+        update_option('wpunewsletter_send_confirmation_email', (isset($_POST['wpunewsletter_send_confirmation_email']) ? 1 : ''));
         update_option('wpunewsletter_use_jquery_ajax', (isset($_POST['wpunewsletter_use_jquery_ajax']) ? 1 : ''));
+        update_option('wpunewsletter_mailchimp_active', (isset($_POST['wpunewsletter_mailchimp_active']) ? 1 : ''));
+
+        /* Update text fields */
+        $text_fields = array(
+            'wpunewsletter_mailchimp_apikey' => '',
+            'wpunewsletter_mailchimp_listid' => '',
+        );
+        foreach ($text_fields as $key => $var) {
+            $value = get_option($key);
+            if (isset($_POST[$key]) && $_POST[$key] != $value) {
+                update_option($key, trim(esc_html($_POST[$key])));
+            }
+        }
     }
 
     /* ----------------------------------------------------------
@@ -458,6 +520,9 @@ class WPUNewsletter {
     ---------------------------------------------------------- */
 
     function wpunewsletter_activate() {
+
+        // Default values
+        update_option('wpunewsletter_send_confirmation_email', 1);
 
         // Create or update database
         require_once ABSPATH . 'wp-admin/includes/upgrade.php';

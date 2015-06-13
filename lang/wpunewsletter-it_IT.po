@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
-"POT-Creation-Date: 2015-05-12 10:26+0100\n"
+"POT-Creation-Date: 2015-06-13 19:34+0100\n"
 "PO-Revision-Date: \n"
 "Last-Translator: Darklg <darklg.blog@gmail.com>\n"
 "Language-Team: \n"
@@ -15,107 +15,123 @@ msgstr ""
 "X-Poedit-KeywordsList: __;_e\n"
 "X-Poedit-SearchPath-0: ../.\n"
 
-#: .././wpunewsletter.php:107
+#: .././wpunewsletter.php:125
 msgid "Latest subscribers"
 msgstr "Ultimi iscritti"
 
-#: .././wpunewsletter.php:122 .././wpunewsletter.php:203
+#: .././wpunewsletter.php:140 .././wpunewsletter.php:224
 msgid "No subscriber for now."
 msgstr "Nessun abbonato per ora."
 
-#: .././wpunewsletter.php:148
+#: .././wpunewsletter.php:166
 msgid "From name"
 msgstr "Da nome"
 
-#: .././wpunewsletter.php:153
+#: .././wpunewsletter.php:171
 msgid "From address"
 msgstr "Da indirizzo"
 
-#: .././wpunewsletter.php:197
+#: .././wpunewsletter.php:218
 #, php-format
 msgid "Subscribers list : %s"
 msgstr "Lista degli iscritti:%s"
 
-#: .././wpunewsletter.php:210
+#: .././wpunewsletter.php:233
 msgid "ID"
 msgstr "ID"
 
-#: .././wpunewsletter.php:210 .././wpunewsletter.php:499
+#: .././wpunewsletter.php:234 .././wpunewsletter.php:651
 msgid "Email"
 msgstr "Email"
 
-#: .././wpunewsletter.php:210
+#: .././wpunewsletter.php:235
 msgid "Locale"
 msgstr "Locale"
 
-#: .././wpunewsletter.php:210
+#: .././wpunewsletter.php:236
 msgid "Date"
 msgstr "dattero"
 
-#: .././wpunewsletter.php:224
+#: .././wpunewsletter.php:254
 msgid "Delete selected lines"
 msgstr "Elimina righe selezionate"
 
-#: .././wpunewsletter.php:269
+#: .././wpunewsletter.php:299
 msgid "Addresses to export:"
 msgstr "Indirizzi per l'esportazione:"
 
-#: .././wpunewsletter.php:271
+#: .././wpunewsletter.php:301
 msgid "Only validated"
 msgstr "Solo convalidato"
 
-#: .././wpunewsletter.php:272
+#: .././wpunewsletter.php:302
 msgid "All"
 msgstr "Tutti"
 
-#: .././wpunewsletter.php:275
+#: .././wpunewsletter.php:305
 msgid "Export addresses"
 msgstr "Indirizzi Export"
 
-#: .././wpunewsletter.php:301
+#: .././wpunewsletter.php:331
 msgid "Subscribers"
 msgstr "Iscritti"
 
-#: .././wpunewsletter.php:316
+#: .././wpunewsletter.php:415
 msgid "This mail is already registered"
 msgstr "Questa email è già registrata"
 
-#: .././wpunewsletter.php:326
+#: .././wpunewsletter.php:420
 msgid "This mail can't be registered"
 msgstr "Questa e-mail non può essere registrato"
 
-#: .././wpunewsletter.php:330
+#: .././wpunewsletter.php:423
 msgid "This mail is now registered"
 msgstr "Questa e-mail è ora registrato"
 
-#: .././wpunewsletter.php:349
+#: .././wpunewsletter.php:442
 msgid "Your subscription couldn't be confirmed"
 msgstr "L'abbonamento non poteva essere confermata"
 
-#: .././wpunewsletter.php:362
+#: .././wpunewsletter.php:455
 msgid "Your subscription has been successfully confirmed"
 msgstr "L'abbonamento è stato confermato con successo"
 
-#: .././wpunewsletter.php:403
+#: .././wpunewsletter.php:470
+msgid "Send confirmation email"
+msgstr "Email di conferma"
+
+#: .././wpunewsletter.php:473
+msgid "Use jQuery AJAX"
+msgstr "Utilizzare jQuery AJAX"
+
+#: .././wpunewsletter.php:477
+msgid "Use Mailchimp"
+msgstr "Utilizzare Mailchimp"
+
+#: .././wpunewsletter.php:486
+msgid "Update options"
+msgstr "Opzioni Update"
+
+#: .././wpunewsletter.php:555
 msgid "Confirm your subscription to our newsletter"
 msgstr "Conferma la tua iscrizione alla nostra newsletter"
 
-#: .././wpunewsletter.php:405
+#: .././wpunewsletter.php:557
 msgid "Hi !"
 msgstr "Ciao!"
 
-#: .././wpunewsletter.php:406
+#: .././wpunewsletter.php:558
 msgid ""
 "Please click on the link below to confirm your subscription to our "
 "newsletter:"
 msgstr ""
-"Cliccate sul link sottostante per confermare l'iscrizione alla "
-"nostra newsletter:"
+"Cliccate sul link sottostante per confermare l'iscrizione alla nostra "
+"newsletter:"
 
-#: .././wpunewsletter.php:407
+#: .././wpunewsletter.php:559
 msgid "Thank you !"
 msgstr "Grazie!"
 
-#: .././wpunewsletter.php:501
+#: .././wpunewsletter.php:653
 msgid "Register"
 msgstr "Registrati"
