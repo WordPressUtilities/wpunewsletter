@@ -3,7 +3,7 @@
 /*
 Plugin Name: WP Utilities Newsletter
 Description: Allow subscriptions to a newsletter.
-Version: 1.7
+Version: 1.8
 Author: Darklg
 Author URI: http://darklg.me/
 License: MIT License
@@ -25,7 +25,6 @@ License URI: http://opensource.org/licenses/MIT
  * - Define only once URL routes : confirm / admin paged / admin page
  * - Add tests
  * - Allow additional fields (stock in text)
- * - Import mails
  * - Hook uninstall
  *
 */
@@ -61,6 +60,9 @@ class WPUNewsletter {
         ));
         add_action('admin_init', array(&$this,
             'delete_postAction'
+        ));
+        add_action('admin_init', array(&$this,
+            'import_postAction'
         ));
         add_action('admin_init', array(&$this,
             'export_postAction'
@@ -188,6 +190,9 @@ class WPUNewsletter {
         add_submenu_page('wpunewsletter', 'Newsletter - Export', 'Export', 'manage_options', 'wpunewsletter-export', array(&$this,
             'page_content_export'
         ));
+        add_submenu_page('wpunewsletter', 'Newsletter - Import', 'Import', 'manage_options', 'wpunewsletter-import', array(&$this,
+            'page_content_import'
+        ));
         add_submenu_page('wpunewsletter', 'Newsletter - Settings', 'Settings', 'manage_options', 'wpunewsletter-settings', array(&$this,
             'page_content_settings'
         ));
@@ -213,6 +218,7 @@ class WPUNewsletter {
 
         if (!empty($wpunewsletteradmin_messages)) {
             echo '<p>' . implode('<br />', $wpunewsletteradmin_messages) . '</p>';
+            $wpunewsletteradmin_messages = array();
         }
 
         echo '<h3>' . sprintf(__('Subscribers list : %s', 'wpunewsletter') , $nb_results_total) . '</h3>';
@@ -286,6 +292,54 @@ class WPUNewsletter {
 
         if ($nb_delete > 0) {
             $wpunewsletteradmin_messages[] = 'Mail suppressions : ' . $nb_delete;
+        }
+    }
+
+    /* ----------------------------------------------------------
+      Admin page - Import
+    ---------------------------------------------------------- */
+
+    function page_content_import() {
+        global $wpunewsletteradmin_messages;
+        echo '<div class="wrap"><h2 class="title">Newsletter - Import</h2>';
+        if (!empty($wpunewsletteradmin_messages)) {
+            echo '<p>' . implode('<br />', $wpunewsletteradmin_messages) . '</p>';
+            $wpunewsletteradmin_messages = array();
+        }
+        echo '<form action="" method="post"><p>';
+        echo '<label for="wpunewsletter_import_addresses">' . __('Addresses to import:', 'wpunewsletter') . '<br /></label> ';
+        echo '<textarea required name="wpunewsletter_import_addresses" id="wpunewsletter_import_addresses" cols="30" rows="10"></textarea>';
+        echo wp_nonce_field('wpunewsletter_import', 'wpunewsletter_import_nonce');
+        echo submit_button(__('Import addresses', 'wpunewsletter'));
+        echo '</form>
+        </div>';
+    }
+
+    function import_postAction() {
+        global $wpdb, $wpunewsletteradmin_messages;
+
+        $chars = array(
+            ';',
+            ','
+        );
+
+        // Check if export is correctly asked
+        if (isset($_POST['wpunewsletter_import_nonce'], $_POST['wpunewsletter_import_addresses']) && wp_verify_nonce($_POST['wpunewsletter_import_nonce'], 'wpunewsletter_import') && !empty($_POST['wpunewsletter_import_addresses'])) {
+            $nb_addresses = 0;
+            $addresses = explode("\n", $_POST['wpunewsletter_import_addresses']);
+            foreach ($addresses as $add) {
+                $address = trim($add);
+                $address = str_replace($chars, '', $address);
+                if (is_email($address)) {
+                    $ins = $this->register_mail($address, false, true);
+                    if ($ins == 1) {
+                        $nb_addresses++;
+                    }
+                }
+            }
+            if ($nb_addresses > 0) {
+                $wpunewsletteradmin_messages[] = 'Mail insertions : ' . $nb_addresses;
+            }
         }
     }
 
@@ -649,7 +703,7 @@ class wpunewsletter_form extends WP_Widget {
 
         $default_widget_content = '<form id="wpunewsletter-form" action="" method="post"><div>';
         $default_widget_content.= '<label for="wpunewsletter_email">' . __('Email', 'wpunewsletter') . '</label>
-            <input type="email" name="wpunewsletter_email" id="wpunewsletter_email" value="" required />
+            <input type="email" name="wpunewsletter_email" placeholder="' . __('Your email address', 'wpunewsletter') . '" id="wpunewsletter_email" value="" required />
             <button type="submit" class="cssc-button cssc-button--default">' . __('Register', 'wpunewsletter') . '</button>
         </div><div class="messages"></div></form>';
 
