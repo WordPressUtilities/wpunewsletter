@@ -33,7 +33,7 @@ $wpunewsletteradmin_messages = array();
 $wpunewsletter_messages = array();
 
 class WPUNewsletter {
-    public $plugin_version = '1.6';
+    public $plugin_version = '1.8';
     public $table_name;
     function __construct() {
         global $wpdb;
