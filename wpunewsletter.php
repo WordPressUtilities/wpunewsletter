@@ -3,7 +3,7 @@
 /*
 Plugin Name: WP Utilities Newsletter
 Description: Allow subscriptions to a newsletter.
-Version: 1.8
+Version: 1.8.1
 Author: Darklg
 Author URI: http://darklg.me/
 License: MIT License
@@ -701,10 +701,14 @@ class wpunewsletter_form extends WP_Widget {
     function widget($args, $instance) {
         global $wpunewsletter_messages;
 
+        $wpunewsletter_form_widget_content_label = apply_filters('wpunewsletter_form_widget_content_label', __('Email', 'wpunewsletter'));
+        $wpunewsletter_form_widget_content_placeholder = apply_filters('wpunewsletter_form_widget_content_placeholder', __('Your email address', 'wpunewsletter'));
+        $wpunewsletter_form_widget_content_button = apply_filters('wpunewsletter_form_widget_content_button', __('Register', 'wpunewsletter'));
+
         $default_widget_content = '<form id="wpunewsletter-form" action="" method="post"><div>';
-        $default_widget_content.= '<label for="wpunewsletter_email">' . __('Email', 'wpunewsletter') . '</label>
-            <input type="email" name="wpunewsletter_email" placeholder="' . __('Your email address', 'wpunewsletter') . '" id="wpunewsletter_email" value="" required />
-            <button type="submit" class="cssc-button cssc-button--default">' . __('Register', 'wpunewsletter') . '</button>
+        $default_widget_content.= '<label for="wpunewsletter_email">' . $wpunewsletter_form_widget_content_label . '</label>
+            <input type="email" name="wpunewsletter_email" placeholder="' . $wpunewsletter_form_widget_content_placeholder . '" id="wpunewsletter_email" value="" required />
+            <button type="submit" class="cssc-button cssc-button--default">' . $wpunewsletter_form_widget_content_button . '</button>
         </div><div class="messages"></div></form>';
 
         echo $args['before_widget'];
