@@ -3,7 +3,7 @@
 /*
 Plugin Name: WP Utilities Newsletter
 Description: Allow subscriptions to a newsletter.
-Version: 1.8.1
+Version: 1.9
 Author: Darklg
 Author URI: http://darklg.me/
 License: MIT License
@@ -33,7 +33,7 @@ $wpunewsletteradmin_messages = array();
 $wpunewsletter_messages = array();
 
 class WPUNewsletter {
-    public $plugin_version = '1.8';
+    public $plugin_version = '1.9';
     public $table_name;
     function __construct() {
         global $wpdb;
@@ -240,6 +240,7 @@ class WPUNewsletter {
             $cols.= '<th>' . __('Email', 'wpunewsletter') . '</th>';
             $cols.= '<th>' . __('Locale', 'wpunewsletter') . '</th>';
             $cols.= '<th>' . __('Date', 'wpunewsletter') . '</th>';
+            $cols.= '<th>' . __('Valid', 'wpunewsletter') . '</th>';
             $cols.= '</tr>';
 
             echo '<thead>' . $cols . '</thead>';
@@ -253,6 +254,7 @@ class WPUNewsletter {
             <td>' . $result->email . '</td>
             <td>' . $result->locale . '</td>
             <td>' . $result->date_register . '</td>
+            <td>' . $result->is_valid . '</td>
             </tr></tbody>';
             }
             echo '</table>';
@@ -402,12 +404,14 @@ class WPUNewsletter {
 
         $api_key = get_option('wpunewsletter_mailchimp_apikey');
         $list_id = get_option('wpunewsletter_mailchimp_listid');
+        $double_optin = (get_option('wpunewsletter_mailchimp_double_optin') == '1');
 
         $Mailchimp = new Mailchimp($api_key);
         $Mailchimp_Lists = new Mailchimp_Lists($Mailchimp);
+
         $subscriber = $Mailchimp_Lists->subscribe($list_id, array(
             'email' => htmlentities($email_vars['email'])
-        ));
+        ) , null, 'html', $double_optin);
 
         $is_subscribed = !empty($subscriber['leid']);
     }
@@ -435,6 +439,13 @@ class WPUNewsletter {
 
         $secretkey = md5(microtime() . $email);
         $is_valid = $send_confirmation_mail ? 0 : 1;
+
+        $mailchimp_active = get_option('wpunewsletter_mailchimp_active');
+
+        if ($mailchimp_active == 1) {
+            $send_confirmation_mail = false;
+            $is_valid = 1;
+        }
 
         $email_vars = array(
             'email' => $email,
@@ -517,27 +528,39 @@ class WPUNewsletter {
       Settings
     ---------------------------------------------------------- */
 
+    function form_item__checkbox($id, $name) {
+        $html = '<p><label>';
+        $html.= '<input type="checkbox" name="' . $id . '" ' . checked(get_option($id) , 1, false) . ' value="1" />' . $name;
+        $html.= '</label></p>';
+        return $html;
+    }
+
+    function form_item__text($id, $name) {
+        $html = '<p>';
+        $html.= '<strong><label for="' . $id . '">' . $name . '</label></strong><br />';
+        $html.= '<input type="text" id="' . $id . '" name="' . $id . '" value="' . esc_attr(get_option($id)) . '" />';
+        $html.= '</p>';
+        return $html;
+    }
+
     function page_content_settings() {
         echo '<div class="wrap"><h2 class="title">Newsletter - Settings</h2>';
-        echo '<form action="" method="post">';
-        echo '<p><label>';
-        echo '<input type="checkbox" name="wpunewsletter_send_confirmation_email" ' . checked(get_option('wpunewsletter_send_confirmation_email') , 1, false) . ' value="1" />' . __('Send confirmation email', 'wpunewsletter');
-        echo '</label></p>';
-        echo '<p><label>';
-        echo '<input type="checkbox" name="wpunewsletter_use_jquery_ajax" ' . checked(get_option('wpunewsletter_use_jquery_ajax') , 1, false) . ' value="1" />' . __('Use jQuery AJAX', 'wpunewsletter');
-        echo '</label></p>';
-        echo '<hr /><h3>Mailchimp</h3>';
-        echo '<p><label>';
-        echo '<input type="checkbox" name="wpunewsletter_mailchimp_active" ' . checked(get_option('wpunewsletter_mailchimp_active') , 1, false) . ' value="1" />' . __('Use Mailchimp', 'wpunewsletter');
-        echo '</label></p>';
 
-        echo '<p><strong><label for="wpunewsletter_mailchimp_apikey">API Key</label></strong><br /><input type="text" id="wpunewsletter_mailchimp_apikey" name="wpunewsletter_mailchimp_apikey" value="' . get_option('wpunewsletter_mailchimp_apikey') . '" /></p>';
-        echo '<p><strong><label for="wpunewsletter_mailchimp_listid">List ID</label></strong><br /><input type="text" id="wpunewsletter_mailchimp_listid" name="wpunewsletter_mailchimp_listid" value="' . get_option('wpunewsletter_mailchimp_listid') . '" /></p>';
+        echo '<form action="" method="post">';
+
+        echo $this->form_item__checkbox('wpunewsletter_send_confirmation_email', __('Send confirmation email', 'wpunewsletter'));
+        echo $this->form_item__checkbox('wpunewsletter_use_jquery_ajax', __('Use jQuery AJAX', 'wpunewsletter'));
+
+        echo '<hr /><h3>Mailchimp</h3>';
+        echo $this->form_item__checkbox('wpunewsletter_mailchimp_active', __('Use Mailchimp', 'wpunewsletter'));
+        echo $this->form_item__checkbox('wpunewsletter_mailchimp_double_optin', __('Use double optin', 'wpunewsletter'));
+        echo $this->form_item__text('wpunewsletter_mailchimp_apikey', __('API Key', 'wpunewsletter'));
+        echo $this->form_item__text('wpunewsletter_mailchimp_listid', __('List ID', 'wpunewsletter'));
 
         echo '<hr />';
-
         echo wp_nonce_field('wpunewsletter_settings', 'wpunewsletter_settings_nonce');
         echo submit_button(__('Update options', 'wpunewsletter'));
+
         echo '</form></div>';
     }
 
@@ -552,9 +575,15 @@ class WPUNewsletter {
         }
 
         /* Update checkbox fields */
-        update_option('wpunewsletter_send_confirmation_email', (isset($_POST['wpunewsletter_send_confirmation_email']) ? 1 : ''));
-        update_option('wpunewsletter_use_jquery_ajax', (isset($_POST['wpunewsletter_use_jquery_ajax']) ? 1 : ''));
-        update_option('wpunewsletter_mailchimp_active', (isset($_POST['wpunewsletter_mailchimp_active']) ? 1 : ''));
+        $checkbox_fields = array(
+            'wpunewsletter_send_confirmation_email',
+            'wpunewsletter_use_jquery_ajax',
+            'wpunewsletter_mailchimp_active',
+            'wpunewsletter_mailchimp_double_optin',
+        );
+        foreach ($checkbox_fields as $field) {
+            update_option($field, (isset($_POST[$field]) ? 1 : ''));
+        }
 
         /* Update text fields */
         $text_fields = array(
