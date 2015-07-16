@@ -3,7 +3,7 @@
 /*
 Plugin Name: WP Utilities Newsletter
 Description: Allow subscriptions to a newsletter.
-Version: 1.9
+Version: 1.10
 Author: Darklg
 Author URI: http://darklg.me/
 License: MIT License
@@ -198,6 +198,16 @@ class WPUNewsletter {
         ));
     }
 
+    function display_messages() {
+        global $wpunewsletteradmin_messages;
+        $html = '';
+        if (!empty($wpunewsletteradmin_messages)) {
+            $html.= '<p>' . implode('<br />', $wpunewsletteradmin_messages) . '</p>';
+            $wpunewsletteradmin_messages = array();
+        }
+        return $html;
+    }
+
     // Admin page content
     function page_content() {
         global $wpdb, $wpunewsletteradmin_messages;
@@ -216,10 +226,7 @@ class WPUNewsletter {
         // Display wrapper
         echo '<div class="wrap"><h2 class="title">Newsletter</h2>';
 
-        if (!empty($wpunewsletteradmin_messages)) {
-            echo '<p>' . implode('<br />', $wpunewsletteradmin_messages) . '</p>';
-            $wpunewsletteradmin_messages = array();
-        }
+        echo $this->display_messages();
 
         echo '<h3>' . sprintf(__('Subscribers list : %s', 'wpunewsletter') , $nb_results_total) . '</h3>';
 
@@ -304,10 +311,7 @@ class WPUNewsletter {
     function page_content_import() {
         global $wpunewsletteradmin_messages;
         echo '<div class="wrap"><h2 class="title">Newsletter - Import</h2>';
-        if (!empty($wpunewsletteradmin_messages)) {
-            echo '<p>' . implode('<br />', $wpunewsletteradmin_messages) . '</p>';
-            $wpunewsletteradmin_messages = array();
-        }
+        echo $this->display_messages();
         echo '<form action="" method="post"><p>';
         echo '<label for="wpunewsletter_import_addresses">' . __('Addresses to import:', 'wpunewsletter') . '<br /></label> ';
         echo '<textarea required name="wpunewsletter_import_addresses" id="wpunewsletter_import_addresses" cols="30" rows="10"></textarea>';
@@ -393,12 +397,30 @@ class WPUNewsletter {
       Actions
     ---------------------------------------------------------- */
 
-    function mailchimp_register($email_vars) {
+    function mailchimp_load() {
         require_once (dirname(__FILE__) . '/inc/mailchimp/Mailchimp.php');
-
         $mailchimp_active = get_option('wpunewsletter_mailchimp_active');
+        return ($mailchimp_active == 1);
+    }
 
-        if ($mailchimp_active != 1) {
+    function mailchimp_test($api_key, $list_id) {
+        if (!$this->mailchimp_load()) {
+            return false;
+        }
+
+        $Mailchimp = new Mailchimp($api_key);
+        $Mailchimp_Lists = new Mailchimp_Lists($Mailchimp);
+
+        $subscriber = $Mailchimp_Lists->getList(array(
+            'exact' => 1,
+            'list_id' => $list_id
+        ));
+
+        return (isset($subscriber['data'], $subscriber['data'][0], $subscriber['data'][0]['id']) && $subscriber['data'][0]['id'] == $list_id);
+    }
+
+    function mailchimp_register($email_vars) {
+        if (!$this->mailchimp_load()) {
             return false;
         }
 
@@ -545,7 +567,7 @@ class WPUNewsletter {
 
     function page_content_settings() {
         echo '<div class="wrap"><h2 class="title">Newsletter - Settings</h2>';
-
+        echo $this->display_messages();
         echo '<form action="" method="post">';
 
         echo $this->form_item__checkbox('wpunewsletter_send_confirmation_email', __('Send confirmation email', 'wpunewsletter'));
@@ -559,12 +581,15 @@ class WPUNewsletter {
 
         echo '<hr />';
         echo wp_nonce_field('wpunewsletter_settings', 'wpunewsletter_settings_nonce');
-        echo submit_button(__('Update options', 'wpunewsletter'));
-
+        echo '<p>';
+        echo submit_button(__('Update and test options', 'wpunewsletter') , 'secondary', 'test', false) . ' ';
+        echo submit_button(__('Update options', 'wpunewsletter') , 'primary', 'save', false);
+        echo '</p>';
         echo '</form></div>';
     }
 
     function settings_postAction() {
+        global $wpunewsletteradmin_messages;
         $nonce = 'wpunewsletter_settings_nonce';
         $action = 'wpunewsletter_settings';
         if (empty($_POST)) {
@@ -594,6 +619,18 @@ class WPUNewsletter {
             $value = get_option($key);
             if (isset($_POST[$key]) && $_POST[$key] != $value) {
                 update_option($key, trim(esc_html($_POST[$key])));
+            }
+        }
+
+        $wpunewsletteradmin_messages[] = __('Success : Updated options', 'wpunewsletter');
+
+        if (isset($_POST['test']) && isset($_POST['wpunewsletter_mailchimp_active'])) {
+            $test = $this->mailchimp_test($_POST['wpunewsletter_mailchimp_apikey'], $_POST['wpunewsletter_mailchimp_listid']);
+            if ($test) {
+                $wpunewsletteradmin_messages[] = __('Success : Mailchimp IDs are correct', 'wpunewsletter');
+            }
+            else {
+                $wpunewsletteradmin_messages[] = __('Failure : Mailchimp IDs are not correct', 'wpunewsletter');
             }
         }
     }
