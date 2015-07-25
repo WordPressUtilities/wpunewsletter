@@ -3,7 +3,7 @@
 /*
 Plugin Name: WP Utilities Newsletter
 Description: Allow subscriptions to a newsletter.
-Version: 1.11
+Version: 1.12
 Author: Darklg
 Author URI: http://darklg.me/
 License: MIT License
@@ -33,7 +33,7 @@ $wpunewsletteradmin_messages = array();
 $wpunewsletter_messages = array();
 
 class WPUNewsletter {
-    public $plugin_version = '1.11';
+    public $plugin_version = '1.12';
     public $table_name;
     function __construct() {
         global $wpdb;
