@@ -3,7 +3,7 @@
 /*
 Plugin Name: WP Utilities Newsletter
 Description: Allow subscriptions to a newsletter.
-Version: 1.12
+Version: 1.13
 Author: Darklg
 Author URI: http://darklg.me/
 License: MIT License
@@ -33,7 +33,7 @@ $wpunewsletteradmin_messages = array();
 $wpunewsletter_messages = array();
 
 class WPUNewsletter {
-    public $plugin_version = '1.12';
+    public $plugin_version = '1.13';
     public $table_name;
     function __construct() {
         global $wpdb;
@@ -44,7 +44,7 @@ class WPUNewsletter {
         $this->plugin_url = plugin_dir_url(__FILE__);
         $this->plugin_dir = dirname(plugin_basename(__FILE__)) . '/';
         $this->perpage = 50;
-        $this->min_admin_level = apply_filters('wpunewsletter__min_admin_level', 'manage_options');
+        $this->min_admin_level = apply_filters('wpunewsletter__min_admin_level', 'delete_posts');
 
         /* Hooks */
         add_action('init', array(&$this,
@@ -79,7 +79,6 @@ class WPUNewsletter {
         ));
 
         // Mailchimp
-
         add_action('wpunewsletter_mail_registered', array(&$this,
             'mailchimp_register'
         ) , 10, 1);
@@ -188,13 +187,13 @@ class WPUNewsletter {
         add_menu_page('Newsletter', 'Newsletter', $this->min_admin_level, 'wpunewsletter', array(&$this,
             'page_content'
         ));
-        add_submenu_page('wpunewsletter', 'Newsletter - Export', 'Export', $this->min_admin_level, 'wpunewsletter-export', array(&$this,
+        add_submenu_page('wpunewsletter', __('Newsletter - Export', 'wpunewsletter') , __('Export', 'wpunewsletter') , $this->min_admin_level, 'wpunewsletter-export', array(&$this,
             'page_content_export'
         ));
-        add_submenu_page('wpunewsletter', 'Newsletter - Import', 'Import', $this->min_admin_level, 'wpunewsletter-import', array(&$this,
+        add_submenu_page('wpunewsletter', __('Newsletter - Import', 'wpunewsletter') , __('Import', 'wpunewsletter') , $this->min_admin_level, 'wpunewsletter-import', array(&$this,
             'page_content_import'
         ));
-        add_submenu_page('wpunewsletter', 'Newsletter - Settings', 'Settings', $this->min_admin_level, 'wpunewsletter-settings', array(&$this,
+        add_submenu_page('wpunewsletter', __('Newsletter - Settings', 'wpunewsletter') , __('Settings', 'wpunewsletter') , $this->min_admin_level, 'wpunewsletter-settings', array(&$this,
             'page_content_settings'
         ));
     }
@@ -225,7 +224,7 @@ class WPUNewsletter {
         $nb_results = count($results);
 
         // Display wrapper
-        echo '<div class="wrap"><h2 class="title">Newsletter</h2>';
+        echo '<div class="wrap"><h2 class="title">' . get_admin_page_title() . '</h2>';
 
         echo $this->display_messages();
 
@@ -311,10 +310,10 @@ class WPUNewsletter {
 
     function page_content_import() {
         global $wpunewsletteradmin_messages;
-        if (current_user_can($this->min_admin_level)) {
+        if (!current_user_can($this->min_admin_level)) {
             return;
         }
-        echo '<div class="wrap"><h2 class="title">Newsletter - Import</h2>';
+        echo '<div class="wrap"><h2 class="title">' . get_admin_page_title() . '</h2>';
         echo $this->display_messages();
         echo '<form action="" method="post"><p>';
         echo '<label for="wpunewsletter_import_addresses">' . __('Addresses to import:', 'wpunewsletter') . '<br /></label> ';
@@ -327,7 +326,7 @@ class WPUNewsletter {
 
     function import_postAction() {
         global $wpdb, $wpunewsletteradmin_messages;
-        if (current_user_can($this->min_admin_level)) {
+        if (!current_user_can($this->min_admin_level)) {
             return;
         }
 
@@ -361,10 +360,10 @@ class WPUNewsletter {
     ---------------------------------------------------------- */
 
     function page_content_export() {
-        if (current_user_can($this->min_admin_level)) {
+        if (!current_user_can($this->min_admin_level)) {
             return;
         }
-        echo '<div class="wrap"><h2 class="title">Newsletter - Export</h2>
+        echo '<div class="wrap"><h2 class="title">' . get_admin_page_title() . '</h2>
         <form action="" method="post"><p>';
         echo '<label for="wpunewsletter_export_type">' . __('Addresses to export:', 'wpunewsletter') . '</label> ';
         echo '<select name="wpunewsletter_export_type" id="wpunewsletter_export_type">
@@ -380,7 +379,7 @@ class WPUNewsletter {
     // Generate CSV for export
     function export_postAction() {
         global $wpdb;
-        if (current_user_can($this->min_admin_level)) {
+        if (!current_user_can($this->min_admin_level)) {
             return;
         }
 
@@ -401,8 +400,8 @@ class WPUNewsletter {
 
     // Add settings link on plugin page
     function settings_link($links) {
-        $settings_link = '<a href="admin.php?page=wpunewsletter">' . __('Subscribers', 'wpunewsletter') . '</a>';
-        array_unshift($links, $settings_link);
+        array_unshift($links, '<a href="admin.php?page=wpunewsletter">' . __('Subscribers', 'wpunewsletter') . '</a>');
+        array_unshift($links, '<a href="admin.php?page=wpunewsletter-settings">' . __('Settings', 'wpunewsletter') . '</a>');
         return $links;
     }
 
@@ -579,10 +578,10 @@ class WPUNewsletter {
     }
 
     function page_content_settings() {
-        if (current_user_can($this->min_admin_level)) {
+        if (!current_user_can($this->min_admin_level)) {
             return;
         }
-        echo '<div class="wrap"><h2 class="title">Newsletter - Settings</h2>';
+        echo '<div class="wrap"><h2 class="title">' . get_admin_page_title() . '</h2>';
         echo $this->display_messages();
         echo '<form action="" method="post">';
 
@@ -606,7 +605,7 @@ class WPUNewsletter {
 
     function settings_postAction() {
         global $wpunewsletteradmin_messages;
-        if (current_user_can($this->min_admin_level)) {
+        if (!current_user_can($this->min_admin_level)) {
             return;
         }
         $nonce = 'wpunewsletter_settings_nonce';

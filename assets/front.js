@@ -5,6 +5,7 @@ jQuery(document).ready(function($) {
         return;
     }
     $form.on('submit', function(e) {
+        $form.attr('data-ajaxloading', '1');
         if (!$messages.length) {
             return;
         }
@@ -16,6 +17,7 @@ jQuery(document).ready(function($) {
             dataType: "json",
             complete: function(data) {
                 $messages.empty();
+                $form.attr('data-ajaxloading', '0');
                 $messages.append(jQuery(data.responseText));
             }
         });
