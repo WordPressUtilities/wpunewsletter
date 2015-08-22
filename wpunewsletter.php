@@ -3,7 +3,7 @@
 /*
 Plugin Name: WP Utilities Newsletter
 Description: Allow subscriptions to a newsletter.
-Version: 1.13
+Version: 1.14
 Author: Darklg
 Author URI: http://darklg.me/
 License: MIT License
@@ -33,7 +33,7 @@ $wpunewsletteradmin_messages = array();
 $wpunewsletter_messages = array();
 
 class WPUNewsletter {
-    public $plugin_version = '1.13';
+    public $plugin_version = '1.14';
     public $table_name;
     function __construct() {
         global $wpdb;
@@ -94,7 +94,7 @@ class WPUNewsletter {
             'add_fields'
         ) , 99, 1);
 
-        if (isset($_GET['page']) && $_GET['page'] == 'wpunewsletter') {
+        if (isset($_GET['page']) && (strpos($_GET['page'], 'wpunewsletter') !== false)) {
             add_action('admin_enqueue_scripts', array(&$this,
                 'admin_enqueue_scripts'
             ));
@@ -186,7 +186,8 @@ class WPUNewsletter {
     function menu_page() {
         add_menu_page('Newsletter', 'Newsletter', $this->min_admin_level, 'wpunewsletter', array(&$this,
             'page_content'
-        ));
+        ) , 'dashicons-email-alt');
+        add_submenu_page('wpunewsletter', __('Newsletter - Subscribers', 'wpunewsletter') , __('Subscribers', 'wpunewsletter') , $this->min_admin_level, 'wpunewsletter');
         add_submenu_page('wpunewsletter', __('Newsletter - Export', 'wpunewsletter') , __('Export', 'wpunewsletter') , $this->min_admin_level, 'wpunewsletter-export', array(&$this,
             'page_content_export'
         ));
@@ -332,7 +333,8 @@ class WPUNewsletter {
 
         $chars = array(
             ';',
-            ','
+            ',',
+            ' ',
         );
 
         // Check if export is correctly asked
@@ -342,6 +344,7 @@ class WPUNewsletter {
             foreach ($addresses as $add) {
                 $address = trim($add);
                 $address = str_replace($chars, '', $address);
+                $address = strtolower($address);
                 if (is_email($address)) {
                     $ins = $this->register_mail($address, false, true);
                     if ($ins == 1) {
@@ -350,7 +353,10 @@ class WPUNewsletter {
                 }
             }
             if ($nb_addresses > 0) {
-                $wpunewsletteradmin_messages[] = 'Mail insertions : ' . $nb_addresses;
+                $wpunewsletteradmin_messages[] = sprintf(__('Mail insertions : %s', 'wputh') , $nb_addresses);
+            }
+            else {
+                $wpunewsletteradmin_messages[] = __('No mail insertions ', 'wputh');
             }
         }
     }
@@ -367,7 +373,7 @@ class WPUNewsletter {
         <form action="" method="post"><p>';
         echo '<label for="wpunewsletter_export_type">' . __('Addresses to export:', 'wpunewsletter') . '</label> ';
         echo '<select name="wpunewsletter_export_type" id="wpunewsletter_export_type">
-        <option value="validated">' . __('Only validated', 'wpunewsletter') . '</option>
+        <option value="validated">' . __('Only valid', 'wpunewsletter') . '</option>
         <option value="all">' . __('All', 'wpunewsletter') . '</option>
     </select></p>';
         echo wp_nonce_field('wpunewsletter_export', 'wpunewsletter_export_nonce');
@@ -564,7 +570,7 @@ class WPUNewsletter {
 
     function form_item__checkbox($id, $name) {
         $html = '<p><label>';
-        $html.= '<input type="checkbox" name="' . $id . '" ' . checked(get_option($id) , 1, false) . ' value="1" />' . $name;
+        $html.= '<input type="checkbox" id="form_item__' . $id . '" name="' . $id . '" ' . checked(get_option($id) , 1, false) . ' value="1" />' . $name;
         $html.= '</label></p>';
         return $html;
     }
@@ -590,9 +596,13 @@ class WPUNewsletter {
 
         echo '<hr /><h3>Mailchimp</h3>';
         echo $this->form_item__checkbox('wpunewsletter_mailchimp_active', __('Use Mailchimp', 'wpunewsletter'));
+
+        $_mailchimpIsOpen = (get_option('wpunewsletter_mailchimp_active') == '1');
+        echo '<div id="wpunewsletter-mailchimp-detail" style="' . ($_mailchimpIsOpen ? '' : 'display: none;') . '">';
         echo $this->form_item__checkbox('wpunewsletter_mailchimp_double_optin', __('Use double optin', 'wpunewsletter'));
         echo $this->form_item__text('wpunewsletter_mailchimp_apikey', __('API Key', 'wpunewsletter'));
         echo $this->form_item__text('wpunewsletter_mailchimp_listid', __('List ID', 'wpunewsletter'));
+        echo '</div>';
 
         echo '<hr />';
         echo wp_nonce_field('wpunewsletter_settings', 'wpunewsletter_settings_nonce');
@@ -665,13 +675,13 @@ class WPUNewsletter {
         // Create or update database
         require_once ABSPATH . 'wp-admin/includes/upgrade.php';
         dbDelta("CREATE TABLE " . $this->table_name . " (
-            `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
-            `email` varchar(100) DEFAULT NULL,
-            `locale` varchar(20) DEFAULT NULL,
-            `secretkey` varchar(100) DEFAULT NULL,
-            `date_register` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            `is_valid` tinyint(1) unsigned DEFAULT '0' NOT NULL,
-            PRIMARY KEY (`id`)
+            id int(11) unsigned NOT NULL AUTO_INCREMENT,
+            email VARCHAR(100) DEFAULT NULL,
+            locale VARCHAR(20) DEFAULT NULL,
+            secretkey VARCHAR(100) DEFAULT NULL,
+            date_register TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            is_valid tinyint(1) unsigned DEFAULT '0' NOT NULL,
+            PRIMARY KEY (id)
         );");
     }
 
@@ -772,8 +782,8 @@ function wpunewsletter_form_register_widgets() {
     register_widget('wpunewsletter_form');
 }
 class wpunewsletter_form extends WP_Widget {
-    function wpunewsletter_form() {
-        parent::WP_Widget(false, '[WPU] Newsletter Form', array(
+    function __construct() {
+        parent::__construct(false, '[WPU] Newsletter Form', array(
             'description' => 'Newsletter Form'
         ));
     }
