@@ -3,7 +3,7 @@
 /*
 Plugin Name: WP Utilities Newsletter
 Description: Allow subscriptions to a newsletter.
-Version: 1.14
+Version: 1.15
 Author: Darklg
 Author URI: http://darklg.me/
 License: MIT License
@@ -12,8 +12,6 @@ License URI: http://opensource.org/licenses/MIT
 
 /*
  * To test :
- * - Init
- * - Register user
  * - Delete user
  * - CSV Export
  * - Widget Front
@@ -25,7 +23,6 @@ License URI: http://opensource.org/licenses/MIT
  * - Define only once URL routes : confirm / admin paged / admin page
  * - Add tests
  * - Allow additional fields (stock in text)
- * - Hook uninstall
  *
 */
 
@@ -674,7 +671,7 @@ class WPUNewsletter {
 
         // Create or update database
         require_once ABSPATH . 'wp-admin/includes/upgrade.php';
-        dbDelta("CREATE TABLE " . $this->table_name . " (
+        return dbDelta("CREATE TABLE " . $this->table_name . " (
             id int(11) unsigned NOT NULL AUTO_INCREMENT,
             email VARCHAR(100) DEFAULT NULL,
             locale VARCHAR(20) DEFAULT NULL,
