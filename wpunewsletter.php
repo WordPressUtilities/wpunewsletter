@@ -3,7 +3,7 @@
 /*
 Plugin Name: WP Utilities Newsletter
 Description: Allow subscriptions to a newsletter.
-Version: 1.15
+Version: 1.16
 Author: Darklg
 Author URI: http://darklg.me/
 License: MIT License
@@ -30,7 +30,7 @@ $wpunewsletteradmin_messages = array();
 $wpunewsletter_messages = array();
 
 class WPUNewsletter {
-    public $plugin_version = '1.14';
+    public $plugin_version = '1.16';
     public $table_name;
     function __construct() {
         global $wpdb;
@@ -211,20 +211,30 @@ class WPUNewsletter {
         global $wpdb, $wpunewsletteradmin_messages;
 
         // Paginate
+        $search = (isset($_GET['search']) ? esc_html($_GET['search']) : '');
+        $search_query = (!empty($search) ? " AND email LIKE '%" . esc_sql($search) . "%' " : '');
         $current_page = ((isset($_GET['paged']) && is_numeric($_GET['paged'])) ? $_GET['paged'] : 1);
         $nb_start = ($current_page * $this->perpage) - $this->perpage;
-        $nb_results_req = $wpdb->get_row("SELECT COUNT(id) as count_id FROM " . $this->table_name);
+
+        // Get results
+        $nb_results_req = $wpdb->get_row("SELECT COUNT(id) as count_id FROM " . $this->table_name . " WHERE 1=1 " . $search_query);
         $nb_results_total = (int)$nb_results_req->count_id;
         $max_page = ceil($nb_results_total / $this->perpage);
 
         // Get page results
-        $results = $wpdb->get_results("SELECT * FROM " . $this->table_name . " ORDER BY id DESC LIMIT " . $nb_start . ", " . $this->perpage);
+        $results = $wpdb->get_results("SELECT * FROM " . $this->table_name . " WHERE 1=1 " . $search_query . " ORDER BY id DESC LIMIT " . $nb_start . ", " . $this->perpage);
         $nb_results = count($results);
 
         // Display wrapper
         echo '<div class="wrap"><h2 class="title">' . get_admin_page_title() . '</h2>';
 
         echo $this->display_messages();
+
+        echo '<form style="float:right;" action="admin.php" method="get">
+        <input type="hidden" name="page" value="wpunewsletter" />
+        <input type="search" name="search" value="' . esc_attr($search) . '" />
+        <button class="button" type="submit">' . __('Search') . '</button>
+        </form>';
 
         echo '<h3>' . sprintf(__('Subscribers list : %s', 'wpunewsletter') , $nb_results_total) . '</h3>';
 
@@ -276,7 +286,7 @@ class WPUNewsletter {
             // need an unlikely integer
             echo '<p>' . paginate_links(array(
                 'base' => str_replace($big, $replace, esc_url(get_pagenum_link($big))) ,
-                'format' => '/admin.php?page=wpunewsletter&paged=' . $replace,
+                'format' => '/admin.php?page=wpunewsletter&search=' . esc_url($search) . '&paged=' . $replace,
                 'current' => max(1, $current_page) ,
                 'total' => $max_page
             )) . '</p>';
@@ -328,27 +338,9 @@ class WPUNewsletter {
             return;
         }
 
-        $chars = array(
-            ';',
-            ',',
-            ' ',
-        );
-
         // Check if export is correctly asked
         if (isset($_POST['wpunewsletter_import_nonce'], $_POST['wpunewsletter_import_addresses']) && wp_verify_nonce($_POST['wpunewsletter_import_nonce'], 'wpunewsletter_import') && !empty($_POST['wpunewsletter_import_addresses'])) {
-            $nb_addresses = 0;
-            $addresses = explode("\n", $_POST['wpunewsletter_import_addresses']);
-            foreach ($addresses as $add) {
-                $address = trim($add);
-                $address = str_replace($chars, '', $address);
-                $address = strtolower($address);
-                if (is_email($address)) {
-                    $ins = $this->register_mail($address, false, true);
-                    if ($ins == 1) {
-                        $nb_addresses++;
-                    }
-                }
-            }
+            $nb_addresses = $this->import_addresses_from_text($_POST['wpunewsletter_import_addresses']);
             if ($nb_addresses > 0) {
                 $wpunewsletteradmin_messages[] = sprintf(__('Mail insertions : %s', 'wputh') , $nb_addresses);
             }
@@ -356,6 +348,30 @@ class WPUNewsletter {
                 $wpunewsletteradmin_messages[] = __('No mail insertions ', 'wputh');
             }
         }
+    }
+
+    function import_addresses_from_text($text) {
+
+        $chars = array(
+            ';',
+            ',',
+            ' ',
+        );
+
+        $nb_addresses = 0;
+        $addresses = explode("\n", $text);
+        foreach ($addresses as $add) {
+            $address = trim($add);
+            $address = str_replace($chars, '', $address);
+            $address = strtolower($address);
+            if (is_email($address)) {
+                $ins = $this->register_mail($address, false, true);
+                if ($ins == 1) {
+                    $nb_addresses++;
+                }
+            }
+        }
+        return $nb_addresses;
     }
 
     /* ----------------------------------------------------------

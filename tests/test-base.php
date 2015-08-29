@@ -49,6 +49,23 @@ class BaseTest extends WP_UnitTestCase {
         // Test invalid email registration
         $insInvalid = $this->plugin->register_mail('test_yopmail.com');
         $this->assertNull($insInvalid);
+
+        // Test invalid email in database
+        $isSubscribed = $this->plugin->mail_is_subscribed('test_yopmail.com');
+        $this->assertNull($isSubscribed);
+    }
+
+    function test_import_addresses(){
+
+        // Mix invalid & valid addresses
+        $addresses = "kevin@yopmail.com\ninvalid.com\naz\ntest@yopmail.com";
+
+        // Ensure plugin activation
+        $this->plugin->wpunewsletter_activate();
+
+        $nb_addresses = $this->plugin->import_addresses_from_text($addresses);
+        $this->assertEquals(2, $nb_addresses);
+
     }
 }
 
