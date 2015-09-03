@@ -3,7 +3,7 @@
 /*
 Plugin Name: WP Utilities Newsletter
 Description: Allow subscriptions to a newsletter.
-Version: 1.16
+Version: 1.17
 Author: Darklg
 Author URI: http://darklg.me/
 License: MIT License
@@ -30,7 +30,7 @@ $wpunewsletteradmin_messages = array();
 $wpunewsletter_messages = array();
 
 class WPUNewsletter {
-    public $plugin_version = '1.16';
+    public $plugin_version = '1.17';
     public $table_name;
     function __construct() {
         global $wpdb;
@@ -43,9 +43,17 @@ class WPUNewsletter {
         $this->perpage = 50;
         $this->min_admin_level = apply_filters('wpunewsletter__min_admin_level', 'delete_posts');
 
+        $this->db_version = get_option('wpunewsletter_db_version');
+        if ($this->plugin_version != $this->db_version) {
+            $this->wpunewsletter_activate();
+        }
+
         /* Hooks */
         add_action('init', array(&$this,
             'load_translation'
+        ));
+        add_action('init', array(&$this,
+            'load_values'
         ));
         add_action('admin_menu', array(&$this,
             'menu_page'
@@ -104,6 +112,25 @@ class WPUNewsletter {
     // Translation
     function load_translation() {
         load_plugin_textdomain('wpunewsletter', false, $this->plugin_dir . 'lang/');
+    }
+
+    function load_values() {
+        $extra_fields = apply_filters('wpunewsletter_extra_fields', array());
+        $this->extra_fields = array();
+        foreach ($extra_fields as $id => $base_field) {
+            if (!isset($base_field['name'])) {
+                break;
+            }
+
+            $type = 'text';
+            $limit = 200;
+
+            $this->extra_fields[$id] = array(
+                'name' => $base_field['name'],
+                'type' => $type,
+                'limit' => $limit,
+            );
+        }
     }
 
     // Admin JS
@@ -212,7 +239,7 @@ class WPUNewsletter {
 
         // Paginate
         $search = (isset($_GET['search']) ? esc_html($_GET['search']) : '');
-        $search_query = (!empty($search) ? " AND email LIKE '%" . esc_sql($search) . "%' " : '');
+        $search_query = (!empty($search) ? " AND (email LIKE '%" . esc_sql($search) . "%' OR extra LIKE '%" . esc_sql($search) . "%')" : '');
         $current_page = ((isset($_GET['paged']) && is_numeric($_GET['paged'])) ? $_GET['paged'] : 1);
         $nb_start = ($current_page * $this->perpage) - $this->perpage;
 
@@ -253,6 +280,9 @@ class WPUNewsletter {
             $cols.= '<th><input type="checkbox" class="wpunewsletter_element_check" name="wpunewsletter_element_check" /></th>';
             $cols.= '<th>' . __('ID', 'wpunewsletter') . '</th>';
             $cols.= '<th>' . __('Email', 'wpunewsletter') . '</th>';
+            foreach ($this->extra_fields as $id => $field) {
+                $cols.= '<th>' . $field['name'] . '</th>';
+            }
             $cols.= '<th>' . __('Locale', 'wpunewsletter') . '</th>';
             $cols.= '<th>' . __('Date', 'wpunewsletter') . '</th>';
             $cols.= '<th>' . __('Valid', 'wpunewsletter') . '</th>';
@@ -266,8 +296,12 @@ class WPUNewsletter {
             <input type="checkbox" class="wpunewsletter_element" name="wpunewsletter_element[]" value="' . $result->id . '" />
             </td>
             <td>' . $result->id . '</td>
-            <td>' . $result->email . '</td>
-            <td>' . $result->locale . '</td>
+            <td>' . $result->email . '</td>';
+            $result_extra = (array)json_decode($result->extra);
+            foreach ($this->extra_fields as $id => $field) {
+                echo '<td>' . (isset($result_extra[$id]) ? esc_html($result_extra[$id]) : '') . '</td>';
+            }
+            echo '<td>' . $result->locale . '</td>
             <td>' . $result->date_register . '</td>
             <td>' . $result->is_valid . '</td>
             </tr></tbody>';
@@ -410,7 +444,7 @@ class WPUNewsletter {
                 $request_more = ' WHERE is_valid = 1';
             }
 
-            $results = $wpdb->get_results("SELECT * FROM " . $this->table_name . $request_more, ARRAY_N);
+            $results = $wpdb->get_results("SELECT * FROM " . $this->table_name . $request_more, ARRAY_A);
             $file_name = sanitize_title(get_bloginfo('name')) . '-' . date('Y-m-d') . '-wpunewsletter' . '.csv';
 
             $this->export_csv($results, $file_name);
@@ -469,6 +503,14 @@ class WPUNewsletter {
         $is_subscribed = !empty($subscriber['leid']);
     }
 
+    function get_mail_infos($email) {
+        global $wpdb;
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            return;
+        }
+        return $wpdb->get_row($wpdb->prepare('SELECT * FROM ' . $this->table_name . ' WHERE email = %s', $email));
+    }
+
     function mail_is_subscribed($email) {
         global $wpdb;
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
@@ -478,7 +520,7 @@ class WPUNewsletter {
         return isset($testbase->email);
     }
 
-    function register_mail($email, $send_confirmation_mail = false, $check_subscription = false) {
+    function register_mail($email, $send_confirmation_mail = false, $check_subscription = false, $extra = array()) {
         global $wpunewsletter_messages, $wpdb;
 
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
@@ -504,7 +546,8 @@ class WPUNewsletter {
             'email' => $email,
             'locale' => get_locale() ,
             'secretkey' => $secretkey,
-            'is_valid' => $is_valid
+            'is_valid' => $is_valid,
+            'extra' => json_encode($extra)
         );
 
         $insert = $wpdb->insert($this->table_name, $email_vars);
@@ -533,7 +576,18 @@ class WPUNewsletter {
                 $wpunewsletter_messages[] = apply_filters('wpunewsletter_message_register_already', __('This mail is already registered', 'wpunewsletter'));
             }
             else {
-                $subscription = $this->register_mail($_POST['wpunewsletter_email'], $send_confirmation_mail, $check_subscription);
+
+                $extra = array();
+                foreach ($this->extra_fields as $id => $field) {
+                    if (!isset($_POST['wpunewsletter_extra__' . $id])) {
+                        break;
+                    }
+                    $value = esc_html($_POST['wpunewsletter_extra__' . $id]);
+                    $value = substr($value, 0, $field['limit']);
+                    $extra[$id] = $value;
+                }
+
+                $subscription = $this->register_mail($_POST['wpunewsletter_email'], $send_confirmation_mail, $check_subscription, $extra);
                 if ($subscription === false) {
                     $wpunewsletter_messages[] = apply_filters('wpunewsletter_message_register_nok', __("This mail can't be registered", 'wpunewsletter'));
                 }
@@ -684,18 +738,48 @@ class WPUNewsletter {
 
         // Default values
         update_option('wpunewsletter_send_confirmation_email', 1);
+        update_option('wpunewsletter_db_version', $this->plugin_version);
 
         // Create or update database
         require_once ABSPATH . 'wp-admin/includes/upgrade.php';
         return dbDelta("CREATE TABLE " . $this->table_name . " (
-            id int(11) unsigned NOT NULL AUTO_INCREMENT,
+            id int(11) unsigned NOT NULL AUTO_INCREMENT PRIMARY KEY,
             email VARCHAR(100) DEFAULT NULL,
+            extra TEXT DEFAULT NULL,
             locale VARCHAR(20) DEFAULT NULL,
             secretkey VARCHAR(100) DEFAULT NULL,
             date_register TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            is_valid tinyint(1) unsigned DEFAULT '0' NOT NULL,
-            PRIMARY KEY (id)
+            is_valid tinyint(1) unsigned DEFAULT '0' NOT NULL
         );");
+    }
+
+    function wpunewsletter_uninstall() {
+
+        /* ----------------------------------------------------------
+          Remove options
+        ---------------------------------------------------------- */
+
+        $options = array(
+            'wpunewsletter_db_version',
+            'wpunewsletter_useremailfromname',
+            'wpunewsletter_useremailfromaddress',
+            'wpunewsletter_send_confirmation_email',
+            'wpunewsletter_use_jquery_ajax',
+            'wpunewsletter_mailchimp_active',
+            'wpunewsletter_mailchimp_double_optin',
+            'wpunewsletter_mailchimp_apikey',
+            'wpunewsletter_mailchimp_listid',
+        );
+        foreach ($options as $option_name) {
+            delete_option($option_name);
+        }
+
+        /* ----------------------------------------------------------
+          Remove table
+        ---------------------------------------------------------- */
+
+        global $wpdb;
+        $q = $wpdb->query("DROP TABLE IF EXISTS {$this->table_name}");
     }
 
     /* ----------------------------------------------------------
@@ -756,7 +840,14 @@ class WPUNewsletter {
 
         // Export as CSV lines
         foreach ($results as $data) {
-            fputcsv($handle, $data);
+            $csv_data = $data;
+            $extra = (array)json_decode($data['extra']);
+            unset($csv_data['extra']);
+            foreach ($this->extra_fields as $id => $field) {
+                $csv_data[$id] = isset($extra[$id]) ? $extra[$id] : '';
+            }
+
+            fputcsv($handle, $csv_data);
         }
 
         // Send CSV File
@@ -806,16 +897,26 @@ class wpunewsletter_form extends WP_Widget {
         return $new_instance;
     }
     function widget($args, $instance) {
-        global $wpunewsletter_messages;
+        global $wpunewsletter_messages, $WPUNewsletter;
 
         $wpunewsletter_form_widget_content_label = apply_filters('wpunewsletter_form_widget_content_label', __('Email', 'wpunewsletter'));
         $wpunewsletter_form_widget_content_placeholder = apply_filters('wpunewsletter_form_widget_content_placeholder', __('Your email address', 'wpunewsletter'));
         $wpunewsletter_form_widget_content_button = apply_filters('wpunewsletter_form_widget_content_button', __('Register', 'wpunewsletter'));
 
         $default_widget_content = '<form id="wpunewsletter-form" action="" method="post"><div>';
-        $default_widget_content.= '<label for="wpunewsletter_email">' . $wpunewsletter_form_widget_content_label . '</label>
-            <input type="email" name="wpunewsletter_email" placeholder="' . $wpunewsletter_form_widget_content_placeholder . '" id="wpunewsletter_email" value="" required />
-            <button type="submit" class="cssc-button cssc-button--default">' . $wpunewsletter_form_widget_content_button . '</button>
+        $default_widget_content.= '<p class="field">
+        <label for="wpunewsletter_email">' . $wpunewsletter_form_widget_content_label . '</label>
+        <input type="email" name="wpunewsletter_email" placeholder="' . $wpunewsletter_form_widget_content_placeholder . '" id="wpunewsletter_email" value="" required /></p>';
+
+        foreach ($WPUNewsletter->extra_fields as $id => $field) {
+            $f_id = 'wpunewsletter_extra__' . $id;
+            $default_widget_content.= '<p class="field">';
+            $default_widget_content.= '<label for="' . $f_id . '">' . $field['name'] . '</label>';
+            $default_widget_content.= '<input type="' . $field['type'] . '" name="' . $f_id . '" id="' . $f_id . '" value="" />';
+            $default_widget_content.= '</p>';
+        }
+
+        $default_widget_content.= '<button type="submit" class="cssc-button cssc-button--default">' . $wpunewsletter_form_widget_content_button . '</button>
         </div><div class="messages"></div></form>';
 
         echo $args['before_widget'];

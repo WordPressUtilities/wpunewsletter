@@ -20,11 +20,10 @@ class BaseTest extends WP_UnitTestCase {
 
     function test_table_creation() {
         global $wpdb;
-        $table_name = "{$wpdb->prefix}wpunewsletter_subscribers";
 
         // Try table creation
         $created = $this->plugin->wpunewsletter_activate();
-        $this->assertStringStartsWith('Created table', current($created));
+        $this->assertGreaterThan(0, count($created));
     }
 
     function test_valid_email_registration() {
@@ -41,6 +40,26 @@ class BaseTest extends WP_UnitTestCase {
         $this->assertTrue($isSubscribed);
     }
 
+    function test_email_extra_field() {
+
+        $extra = array(
+            'test' => 'test',
+            'test2' => 'Internet',
+        );
+        $stored_extra = json_encode($extra);
+
+        // Ensure plugin activation
+        $this->plugin->wpunewsletter_activate();
+
+        // Test email registration with an extra field
+        $insValid = $this->plugin->register_mail('test2@yopmail.com', false, false, $extra);
+        $this->assertEquals(1, $insValid);
+
+        // Test correct insertion
+        $mailInfos = $this->plugin->get_mail_infos('test2@yopmail.com');
+        $this->assertEquals($stored_extra, $mailInfos->extra);
+    }
+
     function test_invalid_email_registration() {
 
         // Ensure plugin activation
@@ -55,7 +74,7 @@ class BaseTest extends WP_UnitTestCase {
         $this->assertNull($isSubscribed);
     }
 
-    function test_import_addresses(){
+    function test_import_addresses() {
 
         // Mix invalid & valid addresses
         $addresses = "kevin@yopmail.com\ninvalid.com\naz\ntest@yopmail.com";
@@ -65,7 +84,6 @@ class BaseTest extends WP_UnitTestCase {
 
         $nb_addresses = $this->plugin->import_addresses_from_text($addresses);
         $this->assertEquals(2, $nb_addresses);
-
     }
 }
 
