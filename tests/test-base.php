@@ -60,6 +60,61 @@ class BaseTest extends WP_UnitTestCase {
         $this->assertEquals($stored_extra, $mailInfos->extra);
     }
 
+    function test_extra_field_format() {
+
+        // Load extra fields
+        $this->plugin->load_extra_fields(array(
+            'az' => array() ,
+            'bz' => array(
+                'type' => 'checkbox'
+            ) ,
+            'cz' => array(
+                'type' => 'email'
+            ) ,
+            'dz' => array(
+                'type' => 'url'
+            ) ,
+            'ez' => array(
+                'char_limit' => 10
+            ) ,
+        ));
+
+        // Test valid values
+        $valid_values = array(
+            'az' => 'test',
+            'bz' => '1',
+            'cz' => 'test@yopmail.com',
+            'dz' => 'https://github.com',
+            'ez' => 'loremipsum',
+        );
+        $test_values = array();
+        foreach ($valid_values as $id => $val) {
+            $test_values['wpunewsletter_extra__' . $id] = $val;
+        }
+        $values = $this->plugin->get_extras_from($test_values);
+        $this->assertEquals($valid_values, $values);
+
+
+        // Test invalid values
+        $values = $this->plugin->get_extras_from(array(
+            'wpunewsletter_extra__az' => '<hr />',
+            'wpunewsletter_extra__cz' => 'tesyopmailcom',
+            'wpunewsletter_extra__dz' => 'lorem',
+            'wpunewsletter_extra__ez' => 'loremipsumaz',
+        ));
+        // HTML must be encoded
+        $this->assertEquals('&lt;hr /&gt;', $values['az']);
+        // Empty checkboxes get a value of 0
+        $this->assertEquals(0, $values['bz']);
+        // Invalid email must be emptied
+        $this->assertEquals('', $values['cz']);
+        // Invalid url must be emptied
+        $this->assertEquals('', $values['dz']);
+        // Text over the char limit must be truncated
+        $this->assertEquals('loremipsum', $values['ez']);
+
+    }
+
     function test_invalid_email_registration() {
 
         // Ensure plugin activation

@@ -3,7 +3,7 @@
 /*
 Plugin Name: WP Utilities Newsletter
 Description: Allow subscriptions to a newsletter.
-Version: 1.17
+Version: 1.18
 Author: Darklg
 Author URI: http://darklg.me/
 License: MIT License
@@ -30,8 +30,9 @@ $wpunewsletteradmin_messages = array();
 $wpunewsletter_messages = array();
 
 class WPUNewsletter {
-    public $plugin_version = '1.17';
+    public $plugin_version = '1.18';
     public $table_name;
+    public $extra_fields;
     function __construct() {
         global $wpdb;
 
@@ -40,7 +41,7 @@ class WPUNewsletter {
         $this->table_name = $wpdb->prefix . $this->plugin_id . "_subscribers";
         $this->plugin_url = plugin_dir_url(__FILE__);
         $this->plugin_dir = dirname(plugin_basename(__FILE__)) . '/';
-        $this->perpage = 50;
+        $this->perpage = apply_filters('wpunewsletter__archive_perpage', 50);
         $this->min_admin_level = apply_filters('wpunewsletter__min_admin_level', 'delete_posts');
 
         $this->db_version = get_option('wpunewsletter_db_version');
@@ -115,20 +116,27 @@ class WPUNewsletter {
     }
 
     function load_values() {
-        $extra_fields = apply_filters('wpunewsletter_extra_fields', array());
-        $this->extra_fields = array();
-        foreach ($extra_fields as $id => $base_field) {
-            if (!isset($base_field['name'])) {
-                break;
-            }
+        $this->load_extra_fields(apply_filters('wpunewsletter_extra_fields', array()));
+    }
 
-            $type = 'text';
-            $limit = 200;
+    function load_extra_fields($extra_fields) {
+        $_field_types = array(
+            'text',
+            'email',
+            'url',
+            'checkbox'
+        );
+        $this->extra_fields = array();
+        foreach ($extra_fields as $id => $_f) {
+
+            $name = isset($_f['name']) ? ucfirst(esc_html($_f['name'])) : $id;
+            $type = isset($_f['type']) && in_array($_f['type'], $_field_types) ? $_f['type'] : $_field_types[0];
+            $char_limit = (isset($_f['char_limit']) && is_numeric($_f['char_limit'])) ? $_f['char_limit'] : 200;
 
             $this->extra_fields[$id] = array(
-                'name' => $base_field['name'],
+                'name' => $name,
                 'type' => $type,
-                'limit' => $limit,
+                'char_limit' => $char_limit,
             );
         }
     }
@@ -297,11 +305,11 @@ class WPUNewsletter {
             </td>
             <td>' . $result->id . '</td>
             <td>' . $result->email . '</td>';
-            $result_extra = (array)json_decode($result->extra);
-            foreach ($this->extra_fields as $id => $field) {
-                echo '<td>' . (isset($result_extra[$id]) ? esc_html($result_extra[$id]) : '') . '</td>';
-            }
-            echo '<td>' . $result->locale . '</td>
+                $result_extra = (array)json_decode($result->extra);
+                foreach ($this->extra_fields as $id => $field) {
+                    echo '<td>' . (isset($result_extra[$id]) ? esc_html($result_extra[$id]) : '') . '</td>';
+                }
+                echo '<td>' . $result->locale . '</td>
             <td>' . $result->date_register . '</td>
             <td>' . $result->is_valid . '</td>
             </tr></tbody>';
@@ -314,13 +322,19 @@ class WPUNewsletter {
         echo '</div>';
 
         if ($max_page > 1) {
-            $big = 999999999;
-            $replace = '%#%';
 
             // need an unlikely integer
+            $big = 999999999;
+            $replace = '%#%';
+            $base_url = '/admin.php?page=wpunewsletter';
+            if (!empty($search)) {
+                $base_url.= '&search=' . esc_url($search);
+            }
+            $admin_url.= admin_url($base_url . '&paged=' . $replace);
+
             echo '<p>' . paginate_links(array(
                 'base' => str_replace($big, $replace, esc_url(get_pagenum_link($big))) ,
-                'format' => '/admin.php?page=wpunewsletter&search=' . esc_url($search) . '&paged=' . $replace,
+                'format' => $admin_url,
                 'current' => max(1, $current_page) ,
                 'total' => $max_page
             )) . '</p>';
@@ -577,16 +591,7 @@ class WPUNewsletter {
             }
             else {
 
-                $extra = array();
-                foreach ($this->extra_fields as $id => $field) {
-                    if (!isset($_POST['wpunewsletter_extra__' . $id])) {
-                        break;
-                    }
-                    $value = esc_html($_POST['wpunewsletter_extra__' . $id]);
-                    $value = substr($value, 0, $field['limit']);
-                    $extra[$id] = $value;
-                }
-
+                $extra = $this->get_extras_from($_POST);
                 $subscription = $this->register_mail($_POST['wpunewsletter_email'], $send_confirmation_mail, $check_subscription, $extra);
                 if ($subscription === false) {
                     $wpunewsletter_messages[] = apply_filters('wpunewsletter_message_register_nok', __("This mail can't be registered", 'wpunewsletter'));
@@ -603,6 +608,37 @@ class WPUNewsletter {
             }
             die;
         }
+    }
+
+    function get_extras_from($from) {
+        $extra = array();
+        foreach ($this->extra_fields as $id => $field) {
+            $value = '';
+
+            // Get value
+            if (isset($from['wpunewsletter_extra__' . $id])) {
+                $value = $from['wpunewsletter_extra__' . $id];
+            }
+
+            // Filter value
+            switch ($field['type']) {
+                case 'checkbox':
+                    $value = (!empty($value)) ? 1 : 0;
+                break;
+                case 'url':
+                    $value = !filter_var($value, FILTER_VALIDATE_URL) ? '' : $value;
+                break;
+                case 'email':
+                    $value = !filter_var($value, FILTER_VALIDATE_EMAIL) ? '' : $value;
+                break;
+                default:
+                    $value = esc_html($from['wpunewsletter_extra__' . $id]);
+            }
+
+            // Limit value
+            $extra[$id] = substr($value, 0, $field['char_limit']);
+        }
+        return $extra;
     }
 
     function confirm_address() {
@@ -909,10 +945,20 @@ class wpunewsletter_form extends WP_Widget {
         <input type="email" name="wpunewsletter_email" placeholder="' . $wpunewsletter_form_widget_content_placeholder . '" id="wpunewsletter_email" value="" required /></p>';
 
         foreach ($WPUNewsletter->extra_fields as $id => $field) {
-            $f_id = 'wpunewsletter_extra__' . $id;
+            $_f_id = 'wpunewsletter_extra__' . $id;
+            $_idname = ' name="' . $_f_id . '" id="' . $_f_id . '" ';
+            $_label = '<label for="' . $_f_id . '">' . $field['name'] . '</label>';
             $default_widget_content.= '<p class="field">';
-            $default_widget_content.= '<label for="' . $f_id . '">' . $field['name'] . '</label>';
-            $default_widget_content.= '<input type="' . $field['type'] . '" name="' . $f_id . '" id="' . $f_id . '" value="" />';
+
+            switch ($field['type']) {
+                case 'checkbox':
+                    $default_widget_content.= '<input type="checkbox" ' . $_idname . ' value="1" /> ' . $_label;
+                break;
+                default:
+
+                    // text / email / url
+                    $default_widget_content.= $_label . ' <input type="' . $field['type'] . '" ' . $_idname . ' value="" />';
+            }
             $default_widget_content.= '</p>';
         }
 
