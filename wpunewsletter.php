@@ -3,7 +3,7 @@
 /*
 Plugin Name: WP Utilities Newsletter
 Description: Allow subscriptions to a newsletter.
-Version: 1.18
+Version: 1.19
 Author: Darklg
 Author URI: http://darklg.me/
 License: MIT License
@@ -21,8 +21,6 @@ License URI: http://opensource.org/licenses/MIT
  * - Use messages without global
  * - Use methods to get/add/delete mails
  * - Define only once URL routes : confirm / admin paged / admin page
- * - Add tests
- * - Allow additional fields (stock in text)
  *
 */
 
@@ -30,7 +28,7 @@ $wpunewsletteradmin_messages = array();
 $wpunewsletter_messages = array();
 
 class WPUNewsletter {
-    public $plugin_version = '1.18';
+    public $plugin_version = '1.19';
     public $table_name;
     public $extra_fields;
     function __construct() {
@@ -129,11 +127,13 @@ class WPUNewsletter {
         $this->extra_fields = array();
         foreach ($extra_fields as $id => $_f) {
 
+            $required = (isset($_f['required']) && $_f['required']);
             $name = isset($_f['name']) ? ucfirst(esc_html($_f['name'])) : $id;
             $type = isset($_f['type']) && in_array($_f['type'], $_field_types) ? $_f['type'] : $_field_types[0];
             $char_limit = (isset($_f['char_limit']) && is_numeric($_f['char_limit'])) ? $_f['char_limit'] : 200;
 
             $this->extra_fields[$id] = array(
+                'required' => $required,
                 'name' => $name,
                 'type' => $type,
                 'char_limit' => $char_limit,
@@ -473,7 +473,7 @@ class WPUNewsletter {
     }
 
     /* ----------------------------------------------------------
-      Actions
+      Mailchimp
     ---------------------------------------------------------- */
 
     function mailchimp_load() {
@@ -516,6 +516,10 @@ class WPUNewsletter {
 
         $is_subscribed = !empty($subscriber['leid']);
     }
+
+    /* ----------------------------------------------------------
+      Actions
+    ---------------------------------------------------------- */
 
     function get_mail_infos($email) {
         global $wpdb;
@@ -590,14 +594,18 @@ class WPUNewsletter {
                 $wpunewsletter_messages[] = apply_filters('wpunewsletter_message_register_already', __('This mail is already registered', 'wpunewsletter'));
             }
             else {
-
                 $extra = $this->get_extras_from($_POST);
-                $subscription = $this->register_mail($_POST['wpunewsletter_email'], $send_confirmation_mail, $check_subscription, $extra);
-                if ($subscription === false) {
-                    $wpunewsletter_messages[] = apply_filters('wpunewsletter_message_register_nok', __("This mail can't be registered", 'wpunewsletter'));
+                if ($extra !== false) {
+                    $subscription = $this->register_mail($_POST['wpunewsletter_email'], $send_confirmation_mail, $check_subscription, $extra);
+                    if ($subscription === false) {
+                        $wpunewsletter_messages[] = apply_filters('wpunewsletter_message_register_nok', __("This mail can't be registered", 'wpunewsletter'));
+                    }
+                    else {
+                        $wpunewsletter_messages[] = apply_filters('wpunewsletter_message_register_ok', __('This mail is now registered', 'wpunewsletter'));
+                    }
                 }
                 else {
-                    $wpunewsletter_messages[] = apply_filters('wpunewsletter_message_register_ok', __('This mail is now registered', 'wpunewsletter'));
+                    $wpunewsletter_messages[] = apply_filters('wpunewsletter_message_register_missing_extra', __('Some fields are missing', 'wpunewsletter'));
                 }
             }
         }
@@ -611,6 +619,8 @@ class WPUNewsletter {
     }
 
     function get_extras_from($from) {
+        $required_missing = false;
+
         $extra = array();
         foreach ($this->extra_fields as $id => $field) {
             $value = '';
@@ -618,6 +628,11 @@ class WPUNewsletter {
             // Get value
             if (isset($from['wpunewsletter_extra__' . $id])) {
                 $value = $from['wpunewsletter_extra__' . $id];
+            }
+
+            // Test required
+            if ((!isset($from['wpunewsletter_extra__' . $id]) || empty($value)) && $field['required']) {
+                $required_missing = true;
             }
 
             // Filter value
@@ -632,12 +647,17 @@ class WPUNewsletter {
                     $value = !filter_var($value, FILTER_VALIDATE_EMAIL) ? '' : $value;
                 break;
                 default:
-                    $value = esc_html($from['wpunewsletter_extra__' . $id]);
+                    $value = esc_html($value);
             }
 
             // Limit value
             $extra[$id] = substr($value, 0, $field['char_limit']);
         }
+
+        if ($required_missing) {
+            $extra = false;
+        }
+
         return $extra;
     }
 
@@ -947,6 +967,9 @@ class wpunewsletter_form extends WP_Widget {
         foreach ($WPUNewsletter->extra_fields as $id => $field) {
             $_f_id = 'wpunewsletter_extra__' . $id;
             $_idname = ' name="' . $_f_id . '" id="' . $_f_id . '" ';
+            if($field['required']){
+                $_idname .= ' required="required" ';
+            }
             $_label = '<label for="' . $_f_id . '">' . $field['name'] . '</label>';
             $default_widget_content.= '<p class="field">';
 
