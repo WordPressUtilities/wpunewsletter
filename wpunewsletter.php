@@ -3,7 +3,7 @@
 /*
 Plugin Name: WP Utilities Newsletter
 Description: Allow subscriptions to a newsletter.
-Version: 1.20
+Version: 1.21
 Author: Darklg
 Author URI: http://darklg.me/
 License: MIT License
@@ -27,7 +27,7 @@ License URI: http://opensource.org/licenses/MIT
 $wpunewsletter_messages = array();
 
 class WPUNewsletter {
-    public $plugin_version = '1.20';
+    public $plugin_version = '1.21';
     public $table_name;
     public $extra_fields;
     public $admin_messages = array();
@@ -80,6 +80,10 @@ class WPUNewsletter {
         ));
         add_action('template_redirect', array(&$this,
             'confirm_address'
+        ));
+
+        add_shortcode('wpunewsletter', array(&$this,
+            'form_shortcode'
         ));
 
         // Mailchimp
@@ -162,6 +166,16 @@ class WPUNewsletter {
         else {
             echo '<p>' . __('No subscriber for now.', 'wpunewsletter') . '</p>';
         }
+    }
+
+    /* ----------------------------------------------------------
+      Shortcode
+    ---------------------------------------------------------- */
+
+    function form_shortcode($atts) {
+        ob_start();
+        the_widget('wpunewsletter_form');
+        return ob_get_clean();
     }
 
     /* ----------------------------------------------------------
@@ -917,6 +931,7 @@ class wpunewsletter_form extends WP_Widget {
         $wpunewsletter_form_widget_content_label = apply_filters('wpunewsletter_form_widget_content_label', __('Email', 'wpunewsletter'));
         $wpunewsletter_form_widget_content_placeholder = apply_filters('wpunewsletter_form_widget_content_placeholder', __('Your email address', 'wpunewsletter'));
         $wpunewsletter_form_widget_content_button = apply_filters('wpunewsletter_form_widget_content_button', __('Register', 'wpunewsletter'));
+        $wpunewsletter_form_widget_classes_button = apply_filters('wpunewsletter_form_widget_classes_button', 'cssc-button cssc-button--default');
 
         $default_widget_content = '<form id="wpunewsletter-form" action="" method="post"><div>';
         $default_widget_content.= '<p class="field">
@@ -944,7 +959,7 @@ class wpunewsletter_form extends WP_Widget {
             $default_widget_content.= '</p>';
         }
 
-        $default_widget_content.= '<button type="submit" class="cssc-button cssc-button--default">' . $wpunewsletter_form_widget_content_button . '</button>
+        $default_widget_content.= '<button type="submit" class="' . $wpunewsletter_form_widget_classes_button . '">' . $wpunewsletter_form_widget_content_button . '</button>
         </div><div class="messages"></div></form>';
 
         echo $args['before_widget'];
