@@ -154,5 +154,19 @@ class BaseTest extends WP_UnitTestCase {
         $nb_addresses = $this->plugin->import_addresses_from_text($addresses);
         $this->assertEquals(2, $nb_addresses);
     }
+
+    function test_admin_messages() {
+
+        // Ensure plugin activation
+        $this->plugin->wpunewsletter_activate();
+
+        $this->plugin->admin_messages[] = 'az';
+
+        // Test if messages are correctly displayed
+        $this->assertEquals('<p>az</p>', $this->plugin->display_messages());
+
+        // Test if messages are emptied after display
+        $this->assertEquals(array() , $this->plugin->admin_messages);
+    }
 }
 
