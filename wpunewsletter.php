@@ -3,7 +3,7 @@
 /*
 Plugin Name: WP Utilities Newsletter
 Description: Allow subscriptions to a newsletter.
-Version: 1.21.1
+Version: 1.22
 Author: Darklg
 Author URI: http://darklg.me/
 License: MIT License
@@ -925,41 +925,50 @@ class wpunewsletter_form extends WP_Widget {
     function update($new_instance, $old_instance) {
         return $new_instance;
     }
-    function widget($args, $instance) {
+    public function widget($args, $instance) {
         global $wpunewsletter_messages, $WPUNewsletter;
 
-        $wpunewsletter_form_widget_content_label = apply_filters('wpunewsletter_form_widget_content_label', __('Email', 'wpunewsletter'));
-        $wpunewsletter_form_widget_content_placeholder = apply_filters('wpunewsletter_form_widget_content_placeholder', __('Your email address', 'wpunewsletter'));
-        $wpunewsletter_form_widget_content_button = apply_filters('wpunewsletter_form_widget_content_button', __('Register', 'wpunewsletter'));
-        $wpunewsletter_form_widget_classes_button = apply_filters('wpunewsletter_form_widget_classes_button', 'cssc-button cssc-button--default');
+        $curr_instance = array(
+            'content_label' => __('Email', 'wpunewsletter'),
+            'content_placeholder' => __('Your email address', 'wpunewsletter'),
+            'content_button' => __('Register', 'wpunewsletter'),
+            'classes_button' => 'cssc-button cssc-button--default'
+        );
+
+        $curr_instance = array_merge($curr_instance, $instance);
+
+        $widg_content_label = apply_filters('wpunewsletter_form_widget_content_label', $curr_instance['content_label']);
+        $widg_content_placeholder = apply_filters('wpunewsletter_form_widget_content_placeholder', $curr_instance['content_placeholder']);
+        $widg_content_button = apply_filters('wpunewsletter_form_widget_content_button', $curr_instance['content_button']);
+        $widg_classes_button = apply_filters('wpunewsletter_form_widget_classes_button', $curr_instance['classes_button']);
 
         $default_widget_content = '<form id="wpunewsletter-form" action="" method="post"><div>';
-        $default_widget_content.= '<p class="field">
-        <label for="wpunewsletter_email">' . $wpunewsletter_form_widget_content_label . '</label>
-        <input type="email" name="wpunewsletter_email" placeholder="' . $wpunewsletter_form_widget_content_placeholder . '" id="wpunewsletter_email" value="" required /></p>';
+        $default_widget_content .= '<p class="field">
+        <label for="wpunewsletter_email">' . $widg_content_label . '</label>
+        <input type="email" name="wpunewsletter_email" placeholder="' . $widg_content_placeholder . '" id="wpunewsletter_email" value="" required /></p>';
 
         foreach ($WPUNewsletter->extra_fields as $id => $field) {
             $_f_id = 'wpunewsletter_extra__' . $id;
             $_idname = ' name="' . $_f_id . '" id="' . $_f_id . '" ';
             if ($field['required']) {
-                $_idname.= ' required="required" ';
+                $_idname .= ' required="required" ';
             }
             $_label = '<label for="' . $_f_id . '">' . $field['name'] . '</label>';
-            $default_widget_content.= '<p class="field">';
+            $default_widget_content .= '<p class="field">';
 
             switch ($field['type']) {
-                case 'checkbox':
-                    $default_widget_content.= '<input type="checkbox" ' . $_idname . ' value="1" /> ' . $_label;
+            case 'checkbox':
+                $default_widget_content .= '<input type="checkbox" ' . $_idname . ' value="1" /> ' . $_label;
                 break;
-                default:
+            default:
 
-                    // text / email / url
-                    $default_widget_content.= $_label . ' <input type="' . $field['type'] . '" ' . $_idname . ' value="" />';
+                // text / email / url
+                $default_widget_content .= $_label . ' <input type="' . $field['type'] . '" ' . $_idname . ' value="" />';
             }
-            $default_widget_content.= '</p>';
+            $default_widget_content .= '</p>';
         }
 
-        $default_widget_content.= '<button type="submit" class="' . $wpunewsletter_form_widget_classes_button . '">' . $wpunewsletter_form_widget_content_button . '</button>
+        $default_widget_content .= '<button type="submit" class="' . $widg_classes_button . '">' . $widg_content_button . '</button>
         </div><div class="messages"></div></form>';
 
         echo $args['before_widget'];
