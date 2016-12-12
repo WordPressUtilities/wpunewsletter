@@ -3,7 +3,7 @@
 /*
 Plugin Name: WP Utilities Newsletter
 Description: Allow subscriptions to a newsletter.
-Version: 1.22.1
+Version: 1.22.2
 Author: Darklg
 Author URI: http://darklg.me/
 License: MIT License
@@ -27,7 +27,7 @@ License URI: http://opensource.org/licenses/MIT
 $wpunewsletter_messages = array();
 
 class WPUNewsletter {
-    public $plugin_version = '1.22.1';
+    public $plugin_version = '1.22.2';
     public $table_name;
     public $extra_fields;
     public $admin_messages = array();
@@ -556,18 +556,18 @@ class WPUNewsletter {
         // If there is a valid email address
         if (isset($_POST['wpunewsletter_email'])) {
             if ($this->mail_is_subscribed($_POST['wpunewsletter_email'])) {
-                $wpunewsletter_messages[] = apply_filters('wpunewsletter_message_register_already', __('This mail is already registered', 'wpunewsletter'));
+                $wpunewsletter_messages[] = apply_filters('wpunewsletter_message_register_already', '<span class="error">' . __('This mail is already registered', 'wpunewsletter') . '</span>');
             } else {
                 $extra = $this->get_extras_from($_POST);
                 if ($extra !== false) {
                     $subscription = $this->register_mail($_POST['wpunewsletter_email'], $send_confirmation_mail, $check_subscription, $extra);
                     if ($subscription === false) {
-                        $wpunewsletter_messages[] = apply_filters('wpunewsletter_message_register_nok', __("This mail can't be registered", 'wpunewsletter'));
+                        $wpunewsletter_messages[] = apply_filters('wpunewsletter_message_register_nok', '<span class="error">' . __("This mail can't be registered", 'wpunewsletter') . '</span>');
                     } else {
-                        $wpunewsletter_messages[] = apply_filters('wpunewsletter_message_register_ok', __('This mail is now registered', 'wpunewsletter'));
+                        $wpunewsletter_messages[] = apply_filters('wpunewsletter_message_register_ok', '<span class="success">' . __('This mail is now registered', 'wpunewsletter') . '</span>');
                     }
                 } else {
-                    $wpunewsletter_messages[] = apply_filters('wpunewsletter_message_register_missing_extra', __('Some fields are missing', 'wpunewsletter'));
+                    $wpunewsletter_messages[] = apply_filters('wpunewsletter_message_register_missing_extra', '<span class="error">' . __('Some fields are missing', 'wpunewsletter') . '</span>');
                 }
             }
         }
