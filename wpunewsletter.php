@@ -3,7 +3,7 @@
 /*
 Plugin Name: WP Utilities Newsletter
 Description: Allow subscriptions to a newsletter.
-Version: 1.22.2
+Version: 1.23
 Author: Darklg
 Author URI: http://darklg.me/
 License: MIT License
@@ -27,7 +27,7 @@ License URI: http://opensource.org/licenses/MIT
 $wpunewsletter_messages = array();
 
 class WPUNewsletter {
-    public $plugin_version = '1.22.2';
+    public $plugin_version = '1.23';
     public $table_name;
     public $extra_fields;
     public $admin_messages = array();
@@ -395,7 +395,10 @@ class WPUNewsletter {
         if (!current_user_can($this->min_admin_level)) {
             return;
         }
-        echo '<div class="wrap"><h2 class="title">' . get_admin_page_title() . '</h2>
+        echo '<div class="wrap"><h2 class="title">' . get_admin_page_title() . '</h2>';
+
+        /* Subscribers */
+        echo '<h3>' . __('Subscribers', 'wpunewsletter') . '</h3>
         <form action="" method="post"><p>';
         echo '<label for="wpunewsletter_export_type">' . __('Addresses to export:', 'wpunewsletter') . '</label> ';
         echo '<select name="wpunewsletter_export_type" id="wpunewsletter_export_type">
@@ -403,6 +406,25 @@ class WPUNewsletter {
         <option value="all">' . __('All', 'wpunewsletter') . '</option>
     </select></p>';
         echo wp_nonce_field('wpunewsletter_export', 'wpunewsletter_export_nonce');
+        echo submit_button(__('Export addresses', 'wpunewsletter'));
+        echo '</form>';
+
+        /* Users */
+        $result = count_users();
+        echo '<h3>' . __('Users', 'wpunewsletter') . '</h3>
+        <form action="" method="post"><p>';
+        echo '<label for="wpunewsletter_export_role">' . __('Addresses to export:', 'wpunewsletter') . '</label> ';
+        echo '<select name="wpunewsletter_export_role" id="wpunewsletter_export_role">';
+
+        foreach ($result['avail_roles'] as $role => $count) {
+            if (!$count) {
+                continue;
+            }
+            echo '<option value="' . $role . '">' . $role . '</option>';
+        }
+
+        echo '<option value="all">' . __('All', 'wpunewsletter') . '</option></select></p>';
+        echo wp_nonce_field('wpunewsletter_exportusers', 'wpunewsletter_exportusers_nonce');
         echo submit_button(__('Export addresses', 'wpunewsletter'));
         echo '</form>
         </div>';
@@ -413,6 +435,28 @@ class WPUNewsletter {
         global $wpdb;
         if (!current_user_can($this->min_admin_level)) {
             return;
+        }
+
+        // Check if export is correctly asked
+        if (isset($_POST['wpunewsletter_exportusers_nonce']) && wp_verify_nonce($_POST['wpunewsletter_exportusers_nonce'], 'wpunewsletter_exportusers')) {
+
+            $args = array();
+            if (isset($_POST['wpunewsletter_export_role'])) {
+                $args['role'] = $_POST['wpunewsletter_export_role'];
+            }
+
+            $blogusers = get_users($args);
+            $results = array();
+            // Array of WP_User objects.
+            foreach ($blogusers as $user) {
+                $results[] = array(
+                    'email' => $user->user_email,
+                    'extra' => ''
+                );
+            }
+
+            $file_name = sanitize_title(get_bloginfo('name')) . '-' . date('Y-m-d') . '-wpunewsletter' . '.csv';
+            $this->export_csv($results, $file_name);
         }
 
         // Check if export is correctly asked
