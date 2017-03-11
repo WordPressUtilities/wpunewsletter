@@ -3,7 +3,7 @@
 /*
 Plugin Name: WP Utilities Newsletter
 Description: Allow subscriptions to a newsletter.
-Version: 1.23
+Version: 1.23.1
 Author: Darklg
 Author URI: http://darklg.me/
 License: MIT License
@@ -27,7 +27,7 @@ License URI: http://opensource.org/licenses/MIT
 $wpunewsletter_messages = array();
 
 class WPUNewsletter {
-    public $plugin_version = '1.23';
+    public $plugin_version = '1.23.1';
     public $table_name;
     public $extra_fields;
     public $admin_messages = array();
@@ -392,6 +392,8 @@ class WPUNewsletter {
     ---------------------------------------------------------- */
 
     public function page_content_export() {
+        global $wp_roles;
+
         if (!current_user_can($this->min_admin_level)) {
             return;
         }
@@ -400,7 +402,7 @@ class WPUNewsletter {
         /* Subscribers */
         echo '<h3>' . __('Subscribers', 'wpunewsletter') . '</h3>
         <form action="" method="post"><p>';
-        echo '<label for="wpunewsletter_export_type">' . __('Addresses to export:', 'wpunewsletter') . '</label> ';
+        echo '<label for="wpunewsletter_export_type">' . __('Addresses to export:', 'wpunewsletter') . '</label><br />';
         echo '<select name="wpunewsletter_export_type" id="wpunewsletter_export_type">
         <option value="validated">' . __('Only valid', 'wpunewsletter') . '</option>
         <option value="all">' . __('All', 'wpunewsletter') . '</option>
@@ -413,17 +415,18 @@ class WPUNewsletter {
         $result = count_users();
         echo '<h3>' . __('Users', 'wpunewsletter') . '</h3>
         <form action="" method="post"><p>';
-        echo '<label for="wpunewsletter_export_role">' . __('Addresses to export:', 'wpunewsletter') . '</label> ';
-        echo '<select name="wpunewsletter_export_role" id="wpunewsletter_export_role">';
-
+        echo '<label for="wpunewsletter_export_role">' . __('Addresses to export:', 'wpunewsletter') . '</label><br />';
+        echo '<select multiple name="wpunewsletter_export_role[]" id="wpunewsletter_export_role">';
+        echo '<option value="all">' . __('All', 'wpunewsletter') . '</option>';
         foreach ($result['avail_roles'] as $role => $count) {
             if (!$count) {
                 continue;
             }
-            echo '<option value="' . $role . '">' . $role . '</option>';
+            $obj_role = get_role($role);
+            echo '<option value="' . $role . '">' . translate_user_role($wp_roles->roles[$role]['name']) . ' (' . $count . ')' . '</option>';
         }
 
-        echo '<option value="all">' . __('All', 'wpunewsletter') . '</option></select></p>';
+        echo '</select></p>';
         echo wp_nonce_field('wpunewsletter_exportusers', 'wpunewsletter_exportusers_nonce');
         echo submit_button(__('Export addresses', 'wpunewsletter'));
         echo '</form>
@@ -442,11 +445,18 @@ class WPUNewsletter {
 
             $args = array();
             if (isset($_POST['wpunewsletter_export_role'])) {
-                $args['role'] = $_POST['wpunewsletter_export_role'];
+                $args['role__in'] = array();
+                foreach ($_POST['wpunewsletter_export_role'] as $role) {
+                    $args['role__in'][] = $role;
+                }
+                if (in_array('all', $args['role__in'])) {
+                    unset($args['role__in']);
+                }
             }
 
             $blogusers = get_users($args);
             $results = array();
+
             // Array of WP_User objects.
             foreach ($blogusers as $user) {
                 $results[] = array(
