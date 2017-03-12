@@ -3,7 +3,7 @@
 /*
 Plugin Name: WP Utilities Newsletter
 Description: Allow subscriptions to a newsletter.
-Version: 1.23.1
+Version: 1.24
 Author: Darklg
 Author URI: http://darklg.me/
 License: MIT License
@@ -27,7 +27,7 @@ License URI: http://opensource.org/licenses/MIT
 $wpunewsletter_messages = array();
 
 class WPUNewsletter {
-    public $plugin_version = '1.23.1';
+    public $plugin_version = '1.24';
     public $table_name;
     public $extra_fields;
     public $admin_messages = array();
@@ -212,11 +212,21 @@ class WPUNewsletter {
     public function page_content() {
         global $wpdb;
 
+        $order_list = array('ASC', 'DESC');
+        $orderby_list = array('id', 'email', 'date_register', 'is_valid');
+
         // Paginate
-        $search = (isset($_GET['search']) ? esc_html($_GET['search']) : '');
+        $search = (isset($_GET['search']) && !empty($_GET['search']) ? esc_html($_GET['search']) : '');
         $search_query = (!empty($search) ? " AND (email LIKE '%" . esc_sql($search) . "%' OR extra LIKE '%" . esc_sql($search) . "%')" : '');
         $current_page = ((isset($_GET['paged']) && is_numeric($_GET['paged'])) ? $_GET['paged'] : 1);
         $nb_start = ($current_page * $this->perpage) - $this->perpage;
+        $orderby = 'id';
+        $orderby = isset($_GET['orderby']) && in_array($_GET['orderby'], $orderby_list) ? $_GET['orderby'] : 'id';
+        $order = isset($_GET['order']) && in_array($_GET['order'], $order_list) ? $_GET['order'] : 'DESC';
+        $base_url = '/admin.php?page=wpunewsletter';
+        if (!empty($search)) {
+            $base_url .= '&search=' . esc_url($search);
+        }
 
         // Get results
         $nb_results_req = $wpdb->get_row("SELECT COUNT(id) as count_id FROM " . $this->table_name . " WHERE 1=1 " . $search_query);
@@ -224,7 +234,7 @@ class WPUNewsletter {
         $max_page = ceil($nb_results_total / $this->perpage);
 
         // Get page results
-        $results = $wpdb->get_results("SELECT * FROM " . $this->table_name . " WHERE 1=1 " . $search_query . " ORDER BY id DESC LIMIT " . $nb_start . ", " . $this->perpage);
+        $results = $wpdb->get_results("SELECT * FROM " . $this->table_name . " WHERE 1=1 " . $search_query . " ORDER BY " . $orderby . " " . $order . " LIMIT " . $nb_start . ", " . $this->perpage);
         $nb_results = count($results);
 
         // Display wrapper
@@ -252,14 +262,14 @@ class WPUNewsletter {
             echo '<table class="widefat">';
             $cols = '<tr>';
             $cols .= '<th><input type="checkbox" class="wpunewsletter_element_check" name="wpunewsletter_element_check" /></th>';
-            $cols .= '<th>' . __('ID', 'wpunewsletter') . '</th>';
-            $cols .= '<th>' . __('Email', 'wpunewsletter') . '</th>';
+            $cols .= '<th><a href="' . $this->get_admin_url($base_url, ($orderby == 'id' && $order == 'ASC' ? 'DESC' : 'ASC'), 'id') . '">' . __('ID', 'wpunewsletter') . '</a></th>';
+            $cols .= '<th><a href="' . $this->get_admin_url($base_url, ($orderby == 'email' && $order == 'ASC' ? 'DESC' : 'ASC'), 'email') . '">' . __('Email', 'wpunewsletter') . '</a></th>';
             foreach ($this->extra_fields as $id => $field) {
                 $cols .= '<th>' . $field['name'] . '</th>';
             }
             $cols .= '<th>' . __('Locale', 'wpunewsletter') . '</th>';
-            $cols .= '<th>' . __('Date', 'wpunewsletter') . '</th>';
-            $cols .= '<th>' . __('Valid', 'wpunewsletter') . '</th>';
+            $cols .= '<th><a href="' . $this->get_admin_url($base_url, ($order == 'ASC' ? 'DESC' : 'ASC'), 'date_register') . '">' . __('Date', 'wpunewsletter') . '</a></th>';
+            $cols .= '<th><a href="' . $this->get_admin_url($base_url, ($order == 'ASC' ? 'DESC' : 'ASC'), 'is_valid') . '">' . __('Valid', 'wpunewsletter') . '</a></th>';
             $cols .= '</tr>';
 
             echo '<thead>' . $cols . '</thead>';
@@ -292,19 +302,20 @@ class WPUNewsletter {
             // need an unlikely integer
             $big = 999999999;
             $replace = '%#%';
-            $base_url = '/admin.php?page=wpunewsletter';
-            if (!empty($search)) {
-                $base_url .= '&search=' . esc_url($search);
-            }
-            $admin_url .= admin_url($base_url . '&paged=' . $replace);
-
+            $admin_url = $this->get_admin_url($base_url, $order, $orderby) . '&paged=' . $replace;
+            $url_base = str_replace($big, $replace, esc_url(get_pagenum_link($big, false)));
+            $url_base = str_replace('&#038;', '&', $url_base);
             echo '<p>' . paginate_links(array(
-                'base' => str_replace($big, $replace, esc_url(get_pagenum_link($big))),
+                'base' => $url_base,
                 'format' => $admin_url,
                 'current' => max(1, $current_page),
                 'total' => $max_page
             )) . '</p>';
         }
+    }
+
+    public function get_admin_url($base_url, $order = 'DESC', $orderby = 'id') {
+        return admin_url($base_url . '&order=' . $order . '&orderby=' . $orderby);
     }
 
     // Delete element
@@ -454,7 +465,7 @@ class WPUNewsletter {
                 }
             }
 
-            $blogusers = get_users($args);
+            $blogusers = get_users(apply_filters('wpunewsletter_exportusers_args', $args));
             $results = array();
 
             // Array of WP_User objects.
