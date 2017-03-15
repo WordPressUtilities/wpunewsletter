@@ -3,7 +3,7 @@
 /*
 Plugin Name: WP Utilities Newsletter
 Description: Allow subscriptions to a newsletter.
-Version: 1.24
+Version: 1.25
 Author: Darklg
 Author URI: http://darklg.me/
 License: MIT License
@@ -27,7 +27,7 @@ License URI: http://opensource.org/licenses/MIT
 $wpunewsletter_messages = array();
 
 class WPUNewsletter {
-    public $plugin_version = '1.24';
+    public $plugin_version = '1.25';
     public $table_name;
     public $extra_fields;
     public $admin_messages = array();
@@ -217,6 +217,9 @@ class WPUNewsletter {
 
         // Paginate
         $search = (isset($_GET['search']) && !empty($_GET['search']) ? esc_html($_GET['search']) : '');
+        if (isset($_GET['reset_search'])) {
+            $search = '';
+        }
         $search_query = (!empty($search) ? " AND (email LIKE '%" . esc_sql($search) . "%' OR extra LIKE '%" . esc_sql($search) . "%')" : '');
         $current_page = ((isset($_GET['paged']) && is_numeric($_GET['paged'])) ? $_GET['paged'] : 1);
         $nb_start = ($current_page * $this->perpage) - $this->perpage;
@@ -225,7 +228,7 @@ class WPUNewsletter {
         $order = isset($_GET['order']) && in_array($_GET['order'], $order_list) ? $_GET['order'] : 'DESC';
         $base_url = '/admin.php?page=wpunewsletter';
         if (!empty($search)) {
-            $base_url .= '&search=' . esc_url($search);
+            $base_url .= '&search=' . esc_html($search);
         }
 
         // Get results
@@ -242,11 +245,18 @@ class WPUNewsletter {
 
         echo $this->display_messages();
 
-        echo '<form style="float:right;" action="admin.php" method="get">
-        <input type="hidden" name="page" value="wpunewsletter" />
-        <input type="search" name="search" value="' . esc_attr($search) . '" />
-        <button class="button" type="submit">' . __('Search') . '</button>
-        </form>';
+        echo '<form style="float:right;" action="admin.php" method="get">';
+        echo '<input type="hidden" name="page" value="wpunewsletter" />';
+        echo '<input type="hidden" name="orderby" value="' . $orderby . '" />';
+        echo '<input type="hidden" name="order" value="' . $order . '" />';
+        echo '<input type="search" name="search" value="' . esc_attr($search) . '" />';
+        echo ' ';
+        submit_button(__('Search'), 'primary', 'launch_search', false);
+        echo ' ';
+        if ($search) {
+            submit_button(__('Cancel'), 'secondary', 'reset_search', false);
+        }
+        echo '</form>';
 
         echo '<h3>' . sprintf(__('Subscribers list : %s', 'wpunewsletter'), $nb_results_total) . '</h3>';
 
