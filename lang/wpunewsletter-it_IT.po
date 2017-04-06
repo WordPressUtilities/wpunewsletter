@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
-"POT-Creation-Date: 2017-03-15 23:26+0100\n"
+"POT-Creation-Date: 2017-04-06 17:53+0200\n"
 "PO-Revision-Date: \n"
 "Last-Translator: Darklg <darklg.blog@gmail.com>\n"
 "Language-Team: \n"
@@ -62,7 +62,7 @@ msgstr "Cerca"
 
 #: .././wpunewsletter.php:257
 msgid "Cancel"
-msgstr ""
+msgstr "Annula"
 
 #: .././wpunewsletter.php:261
 #, php-format

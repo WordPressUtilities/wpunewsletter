@@ -3,7 +3,7 @@
 /*
 Plugin Name: WP Utilities Newsletter
 Description: Allow subscriptions to a newsletter.
-Version: 1.25
+Version: 1.26
 Author: Darklg
 Author URI: http://darklg.me/
 License: MIT License
@@ -27,7 +27,7 @@ License URI: http://opensource.org/licenses/MIT
 $wpunewsletter_messages = array();
 
 class WPUNewsletter {
-    public $plugin_version = '1.25';
+    public $plugin_version = '1.26';
     public $table_name;
     public $extra_fields;
     public $admin_messages = array();
@@ -1000,6 +1000,10 @@ class wpunewsletter_form extends WP_Widget {
             'content_label' => __('Email', 'wpunewsletter'),
             'content_placeholder' => __('Your email address', 'wpunewsletter'),
             'content_button' => __('Register', 'wpunewsletter'),
+            'form_has_wrapper' => true,
+            'fields_has_wrapper' => true,
+            'classes_form' => 'newsletter-form',
+            'classes_label' => 'newsletter-label',
             'classes_button' => 'cssc-button cssc-button--default'
         );
 
@@ -1008,12 +1012,22 @@ class wpunewsletter_form extends WP_Widget {
         $widg_content_label = apply_filters('wpunewsletter_form_widget_content_label', $curr_instance['content_label']);
         $widg_content_placeholder = apply_filters('wpunewsletter_form_widget_content_placeholder', $curr_instance['content_placeholder']);
         $widg_content_button = apply_filters('wpunewsletter_form_widget_content_button', $curr_instance['content_button']);
-        $widg_classes_button = apply_filters('wpunewsletter_form_widget_classes_button', $curr_instance['classes_button']);
 
-        $default_widget_content = '<form id="wpunewsletter-form" action="" method="post"><div>';
-        $default_widget_content .= '<p class="field">
-        <label for="wpunewsletter_email">' . $widg_content_label . '</label>
-        <input type="email" name="wpunewsletter_email" placeholder="' . $widg_content_placeholder . '" id="wpunewsletter_email" value="" required /></p>';
+        /* Display */
+        $widg_form_has_wrapper = apply_filters('wpunewsletter_form_widget_form_has_wrapper', $curr_instance['form_has_wrapper']);
+        $widg_fields_has_wrapper = apply_filters('wpunewsletter_form_widget_fields_has_wrapper', $curr_instance['fields_has_wrapper']);
+
+        /* Classes */
+        $widg_classes_button = apply_filters('wpunewsletter_form_widget_classes_button', $curr_instance['classes_button']);
+        $widg_classes_form = apply_filters('wpunewsletter_form_widget_classes_form', $curr_instance['classes_form']);
+        $widg_classes_label = apply_filters('wpunewsletter_form_widget_classes_label', $curr_instance['classes_label']);
+
+        $default_widget_content = '<form class="' . $widg_classes_form . '" id="wpunewsletter-form" action="" method="post">';
+        $default_widget_content .= $widg_form_has_wrapper ? '<div>' : '';
+        $default_widget_content .= $widg_fields_has_wrapper ? '<p class="field">' : '';
+        $default_widget_content .= '<label class="' . $widg_classes_label . '" for="wpunewsletter_email">' . $widg_content_label . '</label>';
+        $default_widget_content .= '<input type="email" name="wpunewsletter_email" placeholder="' . $widg_content_placeholder . '" id="wpunewsletter_email" value="" required />';
+        $default_widget_content .= $widg_fields_has_wrapper ? '</p>' : '';
 
         foreach ($WPUNewsletter->extra_fields as $id => $field) {
             $_f_id = 'wpunewsletter_extra__' . $id;
@@ -1021,8 +1035,8 @@ class wpunewsletter_form extends WP_Widget {
             if ($field['required']) {
                 $_idname .= ' required="required" ';
             }
-            $_label = '<label for="' . $_f_id . '">' . $field['name'] . '</label>';
-            $default_widget_content .= '<p class="field">';
+            $_label = '<label class="' . $widg_classes_label . '" for="' . $_f_id . '">' . $field['name'] . '</label>';
+            $default_widget_content .= $widg_fields_has_wrapper ? '<p class="field">' : '';
 
             switch ($field['type']) {
             case 'checkbox':
@@ -1033,11 +1047,12 @@ class wpunewsletter_form extends WP_Widget {
                 // text / email / url
                 $default_widget_content .= $_label . ' <input type="' . $field['type'] . '" ' . $_idname . ' value="" />';
             }
-            $default_widget_content .= '</p>';
+            $default_widget_content .= $widg_fields_has_wrapper ? '</p>' : '';
         }
 
-        $default_widget_content .= '<button type="submit" class="' . $widg_classes_button . '">' . $widg_content_button . '</button>
-        </div><div class="messages"></div></form>';
+        $default_widget_content .= '<button type="submit" class="' . $widg_classes_button . '">' . $widg_content_button . '</button>';
+        $default_widget_content .= $widg_form_has_wrapper ? '</div>' : '';
+        $default_widget_content .= '<div class="messages"></div></form>';
 
         echo $args['before_widget'];
         if (!empty($wpunewsletter_messages)) {

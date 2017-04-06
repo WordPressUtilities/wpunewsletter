@@ -62,7 +62,7 @@ msgstr "Rechercher"
 
 #: .././wpunewsletter.php:257
 msgid "Cancel"
-msgstr ""
+msgstr "Annuler"
 
 #: .././wpunewsletter.php:261
 #, php-format
