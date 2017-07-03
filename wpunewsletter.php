@@ -3,7 +3,7 @@
 /*
 Plugin Name: WP Utilities Newsletter
 Description: Allow subscriptions to a newsletter.
-Version: 1.26
+Version: 1.27
 Author: Darklg
 Author URI: http://darklg.me/
 License: MIT License
@@ -27,7 +27,7 @@ License URI: http://opensource.org/licenses/MIT
 $wpunewsletter_messages = array();
 
 class WPUNewsletter {
-    public $plugin_version = '1.26';
+    public $plugin_version = '1.27';
     public $table_name;
     public $extra_fields;
     public $admin_messages = array();
@@ -989,9 +989,19 @@ class wpunewsletter_form extends WP_Widget {
         ));
     }
     public function form($instance) {
-    }
+        $title = !empty($instance['title']) ? $instance['title'] : esc_html__('New title', 'text_domain');
+        ?>
+        <p>
+        <label for="<?php echo esc_attr($this->get_field_id('title')); ?>"><?php esc_attr_e('Title:', 'text_domain');?></label>
+        <input class="widefat" id="<?php echo esc_attr($this->get_field_id('title')); ?>" name="<?php echo esc_attr($this->get_field_name('title')); ?>" type="text" value="<?php echo esc_attr($title); ?>">
+        </p>
+        <?php
+}
     public function update($new_instance, $old_instance) {
-        return $new_instance;
+        $instance = array();
+        $instance['title'] = (!empty($new_instance['title'])) ? strip_tags($new_instance['title']) : '';
+
+        return $instance;
     }
     public function widget($args, $instance) {
         global $wpunewsletter_messages, $WPUNewsletter;
@@ -1023,7 +1033,7 @@ class wpunewsletter_form extends WP_Widget {
         $widg_classes_label = apply_filters('wpunewsletter_form_widget_classes_label', $curr_instance['classes_label']);
 
         $default_widget_content = '<form class="' . $widg_classes_form . '" id="wpunewsletter-form" action="" method="post">';
-        $default_widget_content .= $widg_form_has_wrapper ? '<div>' : '';
+        $default_widget_content .= $widg_form_has_wrapper ? '<div class="wpunewsletter-form-wrapper">' : '';
         $default_widget_content .= $widg_fields_has_wrapper ? '<p class="field">' : '';
         $default_widget_content .= '<label class="' . $widg_classes_label . '" for="wpunewsletter_email">' . $widg_content_label . '</label>';
         $default_widget_content .= '<input type="email" name="wpunewsletter_email" placeholder="' . $widg_content_placeholder . '" id="wpunewsletter_email" value="" required />';
@@ -1055,6 +1065,9 @@ class wpunewsletter_form extends WP_Widget {
         $default_widget_content .= '<div class="messages"></div></form>';
 
         echo $args['before_widget'];
+        if ($title = apply_filters('widget_title', empty($instance['title']) ? '' : $instance['title'])) {
+            echo $args['before_title'] . $title . $args['after_title'];
+        }
         if (!empty($wpunewsletter_messages)) {
             echo '<p>' . implode('<br />', $wpunewsletter_messages) . '</p>';
         }
