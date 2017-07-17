@@ -3,7 +3,7 @@
 /*
 Plugin Name: WP Utilities Newsletter
 Description: Allow subscriptions to a newsletter.
-Version: 1.27
+Version: 1.28
 Author: Darklg
 Author URI: http://darklg.me/
 License: MIT License
@@ -13,7 +13,6 @@ License URI: http://opensource.org/licenses/MIT
 /*
  * To test :
  * - Delete user
- * - CSV Export
  * - Widget Front
  * - Widget Admin
  *
@@ -27,10 +26,12 @@ License URI: http://opensource.org/licenses/MIT
 $wpunewsletter_messages = array();
 
 class WPUNewsletter {
-    public $plugin_version = '1.27';
+    public $plugin_version = '1.28';
     public $table_name;
     public $extra_fields;
     public $admin_messages = array();
+    public $dash_cache_id = 'wpunewsletter_dashboard_widget_subscribers';
+
     public function __construct() {
         global $wpdb;
 
@@ -155,9 +156,14 @@ class WPUNewsletter {
     }
 
     public function content_dashboard_widget() {
-        global $wpdb;
 
-        $results = $wpdb->get_results("SELECT * FROM " . $this->table_name . " ORDER BY id DESC LIMIT 0, 10");
+        $results = wp_cache_get($this->dash_cache_id);
+        if ($results === false) {
+            global $wpdb;
+            $results = $wpdb->get_results("SELECT id,email FROM " . $this->table_name . " ORDER BY id DESC LIMIT 0, 10");
+            wp_cache_set($this->dash_cache_id, $results, '', 0);
+        }
+
         if (!empty($results)) {
             foreach ($results as $result) {
                 echo '<p>' . $result->id . ' - ' . $result->email . '</p>';
@@ -340,6 +346,7 @@ class WPUNewsletter {
                 ));
                 $nb_delete++;
             }
+            wp_cache_delete($this->dash_cache_id);
         }
 
         if ($nb_delete > 0) {
@@ -420,6 +427,8 @@ class WPUNewsletter {
         }
         echo '<div class="wrap"><h2 class="title">' . get_admin_page_title() . '</h2>';
 
+        do_action('wpunewsletter_export_page_before');
+
         /* Subscribers */
         echo '<h3>' . __('Subscribers', 'wpunewsletter') . '</h3>
         <form action="" method="post"><p>';
@@ -450,8 +459,11 @@ class WPUNewsletter {
         echo '</select></p>';
         echo wp_nonce_field('wpunewsletter_exportusers', 'wpunewsletter_exportusers_nonce');
         echo submit_button(__('Export addresses', 'wpunewsletter'));
-        echo '</form>
-        </div>';
+        echo '</form>';
+
+        do_action('wpunewsletter_export_page_after');
+
+        echo '</div>';
     }
 
     // Generate CSV for export
@@ -460,6 +472,8 @@ class WPUNewsletter {
         if (!current_user_can($this->min_admin_level)) {
             return;
         }
+
+        do_action('wpunewsletter_export_postAction');
 
         // Check if export is correctly asked
         if (isset($_POST['wpunewsletter_exportusers_nonce']) && wp_verify_nonce($_POST['wpunewsletter_exportusers_nonce'], 'wpunewsletter_exportusers')) {
@@ -609,6 +623,7 @@ class WPUNewsletter {
         );
 
         $insert = $wpdb->insert($this->table_name, $email_vars);
+        wp_cache_delete($this->dash_cache_id);
 
         if ($insert !== false) {
             do_action('wpunewsletter_mail_registered', $email_vars);
@@ -877,6 +892,12 @@ class WPUNewsletter {
 
         global $wpdb;
         $q = $wpdb->query("DROP TABLE IF EXISTS {$this->table_name}");
+
+        /* ----------------------------------------------------------
+          Clear cache
+        ---------------------------------------------------------- */
+
+        wp_cache_delete($this->dash_cache_id);
     }
 
     /* ----------------------------------------------------------
