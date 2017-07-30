@@ -3,7 +3,7 @@
 /*
 Plugin Name: WP Utilities Newsletter
 Description: Allow subscriptions to a newsletter.
-Version: 1.28
+Version: 1.29
 Author: Darklg
 Author URI: http://darklg.me/
 License: MIT License
@@ -29,6 +29,7 @@ class WPUNewsletter {
     public $plugin_version = '1.28';
     public $table_name;
     public $extra_fields;
+    public $custom_queries;
     public $admin_messages = array();
     public $dash_cache_id = 'wpunewsletter_dashboard_widget_subscribers';
 
@@ -109,6 +110,7 @@ class WPUNewsletter {
 
     public function load_values() {
         $this->load_extra_fields(apply_filters('wpunewsletter_extra_fields', array()));
+        $this->custom_queries = apply_filters('wpunewsletter_custom_export_queries', array());
     }
 
     public function load_extra_fields($extra_fields) {
@@ -455,11 +457,30 @@ class WPUNewsletter {
             $obj_role = get_role($role);
             echo '<option value="' . $role . '">' . translate_user_role($wp_roles->roles[$role]['name']) . ' (' . $count . ')' . '</option>';
         }
-
         echo '</select></p>';
         echo wp_nonce_field('wpunewsletter_exportusers', 'wpunewsletter_exportusers_nonce');
         echo submit_button(__('Export addresses', 'wpunewsletter'));
         echo '</form>';
+
+        /* Custom */
+        if (!empty($this->custom_queries)) {
+
+            echo '<h3>' . __('Custom', 'wpunewsletter') . '</h3>
+        <form action="" method="post"><p>';
+            echo '<label for="wpunewsletter_export_custom">' . __('Addresses to export:', 'wpunewsletter') . '</label><br />';
+            echo '<select name="wpunewsletter_export_custom" id="wpunewsletter_export_custom">';
+            foreach ($this->custom_queries as $id => $query) {
+                $query_name = $id;
+                if (isset($query['name'])) {
+                    $query_name = $query['name'];
+                }
+                echo '<option value="' . $id . '">' . $query_name . '</option>';
+            }
+            echo '</select></p>';
+            echo wp_nonce_field('wpunewsletter_exportcustom', 'wpunewsletter_exportcustom_nonce');
+            echo submit_button(__('Export addresses', 'wpunewsletter'));
+            echo '</form>';
+        }
 
         do_action('wpunewsletter_export_page_after');
 
@@ -513,6 +534,38 @@ class WPUNewsletter {
             }
 
             $results = $wpdb->get_results("SELECT * FROM " . $this->table_name . $request_more, ARRAY_A);
+            $file_name = sanitize_title(get_bloginfo('name')) . '-' . date('Y-m-d') . '-wpunewsletter' . '.csv';
+
+            $this->export_csv($results, $file_name);
+        }
+
+        // Check if export is correctly asked
+        if (isset($_POST['wpunewsletter_exportcustom_nonce'], $_POST['wpunewsletter_export_custom']) && wp_verify_nonce($_POST['wpunewsletter_exportcustom_nonce'], 'wpunewsletter_exportcustom')) {
+
+            if (!array_key_exists($_POST['wpunewsletter_export_custom'], $this->custom_queries)) {
+                return;
+            }
+
+            $args = $this->custom_queries[$_POST['wpunewsletter_export_custom']];
+
+            if (isset($args['name'])) {
+                unset($args['name']);
+            }
+
+            if(!isset($args['number'])){
+                $args['number'] = 0;
+            }
+
+            $blogusers = get_users(apply_filters('wpunewsletter_exportcustom_args', $args));
+
+            // Array of WP_User objects.
+            $results = array();
+            foreach ($blogusers as $user) {
+                $results[] = array(
+                    'email' => $user->user_email,
+                    'extra' => ''
+                );
+            }
             $file_name = sanitize_title(get_bloginfo('name')) . '-' . date('Y-m-d') . '-wpunewsletter' . '.csv';
 
             $this->export_csv($results, $file_name);
