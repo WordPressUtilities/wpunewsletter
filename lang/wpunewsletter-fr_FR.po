@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
-"POT-Creation-Date: 2017-07-30 21:35+0200\n"
+"POT-Creation-Date: 2017-07-31 18:51+0200\n"
 "PO-Revision-Date: \n"
 "Last-Translator: Darklg <darklg.blog@gmail.com>\n"
 "Language-Team: \n"
@@ -28,7 +28,7 @@ msgid "Newsletter - Subscribers"
 msgstr "Newsletter - Abonnés"
 
 #: .././wpunewsletter.php:197 .././wpunewsletter.php:435
-#: .././wpunewsletter.php:577
+#: .././wpunewsletter.php:587
 msgid "Subscribers"
 msgstr "Abonnés"
 
@@ -52,7 +52,7 @@ msgstr "Importer"
 msgid "Newsletter - Settings"
 msgstr "Newsletter - Réglages"
 
-#: .././wpunewsletter.php:204 .././wpunewsletter.php:578
+#: .././wpunewsletter.php:204 .././wpunewsletter.php:588
 msgid "Settings"
 msgstr "Réglages"
 
@@ -73,7 +73,7 @@ msgstr "Liste des abonnés : %s"
 msgid "ID"
 msgstr "ID"
 
-#: .././wpunewsletter.php:284 .././wpunewsletter.php:1084
+#: .././wpunewsletter.php:284 .././wpunewsletter.php:1094
 msgid "Email"
 msgstr "E-Mail"
 
@@ -136,99 +136,99 @@ msgstr "Membres"
 msgid "Custom"
 msgstr "Personnalisé"
 
-#: .././wpunewsletter.php:702
+#: .././wpunewsletter.php:712
 msgid "This mail is already registered"
 msgstr "Cette adresse mail est déjà inscrite"
 
-#: .././wpunewsletter.php:708
+#: .././wpunewsletter.php:718
 msgid "This mail can't be registered"
 msgstr "Cette adresse mail ne peut pas être inscrite"
 
-#: .././wpunewsletter.php:710
+#: .././wpunewsletter.php:720
 msgid "This mail is now registered"
 msgstr "Cette adresse mail est désormais inscrite"
 
-#: .././wpunewsletter.php:713
+#: .././wpunewsletter.php:723
 msgid "Some fields are missing"
 msgstr "Certains champs sont manquants"
 
-#: .././wpunewsletter.php:775
+#: .././wpunewsletter.php:785
 msgid "Your subscription couldn't be confirmed"
 msgstr "Votre abonnement n'a pas pu être confirmé"
 
-#: .././wpunewsletter.php:788
+#: .././wpunewsletter.php:798
 msgid "Your subscription has been successfully confirmed"
 msgstr "Votre abonnement a été confirmé avec succès "
 
-#: .././wpunewsletter.php:822
+#: .././wpunewsletter.php:832
 msgid "Send confirmation email"
 msgstr "Envoyer un email de confirmation"
 
-#: .././wpunewsletter.php:823
+#: .././wpunewsletter.php:833
 msgid "Use jQuery AJAX"
 msgstr "Utiliser jQuery AJAX"
 
-#: .././wpunewsletter.php:825
+#: .././wpunewsletter.php:835
 msgid "Outgoing emails"
 msgstr "Emails sortants"
 
-#: .././wpunewsletter.php:826
+#: .././wpunewsletter.php:836
 msgid "From name"
 msgstr "Nom de l'expéditeur"
 
-#: .././wpunewsletter.php:827
+#: .././wpunewsletter.php:837
 msgid "From address"
 msgstr "Adresse de l'expéditeur"
 
-#: .././wpunewsletter.php:828
+#: .././wpunewsletter.php:838
 msgid "Mailchimp"
 msgstr "Mailchimp"
 
-#: .././wpunewsletter.php:829
+#: .././wpunewsletter.php:839
 msgid "Use Mailchimp"
 msgstr "Utiliser Mailchimp"
 
-#: .././wpunewsletter.php:833
+#: .././wpunewsletter.php:843
 msgid "Use double optin"
 msgstr "Utiliser le double optin"
 
-#: .././wpunewsletter.php:834
+#: .././wpunewsletter.php:844
 msgid "API Key"
 msgstr "Clé API"
 
-#: .././wpunewsletter.php:835
+#: .././wpunewsletter.php:845
 msgid "List ID"
 msgstr "ID de la liste"
 
-#: .././wpunewsletter.php:841
+#: .././wpunewsletter.php:851
 msgid "Update and test options"
 msgstr "Mettre à jour et tester les options"
 
-#: .././wpunewsletter.php:842
+#: .././wpunewsletter.php:852
 msgid "Update options"
 msgstr "Mettre à jour les options"
 
-#: .././wpunewsletter.php:886
+#: .././wpunewsletter.php:896
 msgid "Success : Updated options"
 msgstr "Succès : Mise à jour des options"
 
-#: .././wpunewsletter.php:891
+#: .././wpunewsletter.php:901
 msgid "Success : Mailchimp IDs are correct"
 msgstr "Succès : Les IDs Mailchimp sont corrects"
 
-#: .././wpunewsletter.php:893
+#: .././wpunewsletter.php:903
 msgid "Failure : Mailchimp IDs are not correct"
 msgstr "Échec : Les IDs Mailchimp ne sont pas corrects"
 
-#: .././wpunewsletter.php:971
+#: .././wpunewsletter.php:981
 msgid "Confirm your subscription to our newsletter"
 msgstr "Confirmez votre abonnement à notre newsletter"
 
-#: .././wpunewsletter.php:973
+#: .././wpunewsletter.php:983
 msgid "Hi !"
 msgstr "Bonjour !"
 
-#: .././wpunewsletter.php:974
+#: .././wpunewsletter.php:984
 msgid ""
 "Please click on the link below to confirm your subscription to our "
 "newsletter:"
@@ -236,15 +236,15 @@ msgstr ""
 "Merci de cliquer sur le lien ci-dessous pour confirmer votre abonnement à "
 "notre newsletter :"
 
-#: .././wpunewsletter.php:975
+#: .././wpunewsletter.php:985
 msgid "Thank you !"
 msgstr "Merci !"
 
-#: .././wpunewsletter.php:1085
+#: .././wpunewsletter.php:1095
 msgid "Your email address"
 msgstr "Votre adresse email"
 
-#: .././wpunewsletter.php:1086
+#: .././wpunewsletter.php:1096
 msgid "Register"
 msgstr "S'inscrire"
 

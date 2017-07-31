@@ -3,7 +3,7 @@
 /*
 Plugin Name: WP Utilities Newsletter
 Description: Allow subscriptions to a newsletter.
-Version: 1.29
+Version: 1.30
 Author: Darklg
 Author URI: http://darklg.me/
 License: MIT License
@@ -26,7 +26,7 @@ License URI: http://opensource.org/licenses/MIT
 $wpunewsletter_messages = array();
 
 class WPUNewsletter {
-    public $plugin_version = '1.28';
+    public $plugin_version = '1.30';
     public $table_name;
     public $extra_fields;
     public $custom_queries;
@@ -552,7 +552,13 @@ class WPUNewsletter {
                 unset($args['name']);
             }
 
-            if(!isset($args['number'])){
+            $merge_with_validated = false;
+            if (isset($args['merge_with_validated'])) {
+                unset($args['merge_with_validated']);
+                $merge_with_validated = true;
+            }
+
+            if (!isset($args['number'])) {
                 $args['number'] = 0;
             }
 
@@ -560,12 +566,16 @@ class WPUNewsletter {
 
             // Array of WP_User objects.
             $results = array();
+            if ($merge_with_validated) {
+                $results = $wpdb->get_results("SELECT * FROM " . $this->table_name . ' WHERE is_valid = 1', ARRAY_A);
+            }
             foreach ($blogusers as $user) {
                 $results[] = array(
                     'email' => $user->user_email,
                     'extra' => ''
                 );
             }
+
             $file_name = sanitize_title(get_bloginfo('name')) . '-' . date('Y-m-d') . '-wpunewsletter' . '.csv';
 
             $this->export_csv($results, $file_name);
