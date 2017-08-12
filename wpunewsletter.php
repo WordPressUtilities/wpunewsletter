@@ -3,7 +3,7 @@
 /*
 Plugin Name: WP Utilities Newsletter
 Description: Allow subscriptions to a newsletter.
-Version: 1.30
+Version: 1.30.1
 Author: Darklg
 Author URI: http://darklg.me/
 License: MIT License
@@ -26,7 +26,7 @@ License URI: http://opensource.org/licenses/MIT
 $wpunewsletter_messages = array();
 
 class WPUNewsletter {
-    public $plugin_version = '1.30';
+    public $plugin_version = '1.30.1';
     public $table_name;
     public $extra_fields;
     public $custom_queries;
@@ -781,7 +781,7 @@ class WPUNewsletter {
             return;
         }
         global $wpdb;
-
+        $message_type = 'failure';
         $message = apply_filters('wpunewsletter_failuremsg', __("Your subscription couldn't be confirmed", 'wpunewsletter'));
         $address_exists = $wpdb->get_row($wpdb->prepare("SELECT id FROM " . $this->table_name . " WHERE email = %s AND secretkey = %s", $_GET['wpunewsletter_email'], $_GET['wpunewsletter_key']));
         if (isset($address_exists->id)) {
@@ -795,11 +795,12 @@ class WPUNewsletter {
                 '%d'
             ));
             if ($update !== FALSE) {
+                $message_type = 'success';
                 $message = apply_filters('wpunewsletter_successmsg', __("Your subscription has been successfully confirmed", 'wpunewsletter'));
             }
         }
 
-        $this->display_message_in_page($message);
+        $this->display_message_in_page($message, $message_type);
     }
 
     /* ----------------------------------------------------------
@@ -999,13 +1000,19 @@ class WPUNewsletter {
         ));
     }
 
-    public function display_message_in_page($message) {
+    public function display_message_in_page($message, $message_type = 'success') {
+        add_filter('body_class', array(&$this, 'add_body_class_confirm_newsletter'));
         get_header();
         echo apply_filters('wpunewsletter_display_after_header', '');
-        echo '<p>' . $message . '</p>';
+        echo '<div class="wpunewsletter-message-wrapper wpunewsletter-message--' . $message_type . '"><p>' . $message . '</p></div>';
         echo apply_filters('wpunewsletter_display_before_footer', '');
         get_footer();
         die();
+    }
+
+    public function add_body_class_confirm_newsletter($classes) {
+        $classes[] = 'wpunewsletter-confirmation-page';
+        return $classes;
     }
 
     public function export_csv($results, $file_name) {
