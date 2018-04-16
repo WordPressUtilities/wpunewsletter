@@ -3,7 +3,7 @@
 /*
 Plugin Name: WP Utilities Newsletter
 Description: Allow subscriptions to a newsletter.
-Version: 1.31.0
+Version: 1.31.1
 Author: Darklg
 Author URI: http://darklg.me/
 License: MIT License
@@ -1113,6 +1113,7 @@ class wpunewsletter_form extends WP_Widget {
             'content_button' => __('Register', 'wpunewsletter'),
             'form_has_wrapper' => true,
             'fields_has_wrapper' => true,
+            'main_field_have_wrapper' => true,
             'hidden_fields' => array(),
             'main_field_position' => 'before',
             'classes_mainfield' => '',
@@ -1135,6 +1136,7 @@ class wpunewsletter_form extends WP_Widget {
         /* Display */
         $widg_form_has_wrapper = apply_filters('wpunewsletter_form_widget_form_has_wrapper', $curr_instance['form_has_wrapper']);
         $widg_fields_has_wrapper = apply_filters('wpunewsletter_form_widget_fields_has_wrapper', $curr_instance['fields_has_wrapper']);
+        $widg_main_field_have_wrapper = apply_filters('wpunewsletter_form_widget_main_field_have_wrapper', $curr_instance['main_field_have_wrapper']);
         $widg_hidden_fields = apply_filters('wpunewsletter_form_widget_hidden_fields', $curr_instance['hidden_fields']);
         $widg_main_field_position = apply_filters('wpunewsletter_form_widget_main_field_position', $curr_instance['main_field_position']);
 
@@ -1152,12 +1154,12 @@ class wpunewsletter_form extends WP_Widget {
 
         $main_newsletter_field = '';
 
-        $default_widget_content .= apply_filters('wpunewsletter__before_main_field', '');
-        $main_newsletter_field .= $widg_fields_has_wrapper ? '<p class="' . $widg_classes_fieldwrapper . '">' : '';
+        $main_newsletter_field .= apply_filters('wpunewsletter__before_main_field', '', $instance);
+        $main_newsletter_field .= ($widg_main_field_have_wrapper && $widg_fields_has_wrapper) ? '<p class="' . $widg_classes_fieldwrapper . '">' : '';
         $main_newsletter_field .= '<label class="' . $widg_classes_label . '" for="' . $fields_prefix . 'wpunewsletter_email">' . $widg_content_label . '</label>';
         $main_newsletter_field .= '<input class="' . $widg_classes_mainfield . '" type="email" name="wpunewsletter_email" placeholder="' . $widg_content_placeholder . '" id="' . $fields_prefix . 'wpunewsletter_email" value="" required />';
-        $main_newsletter_field .= $widg_fields_has_wrapper ? '</p>' : '';
-        $default_widget_content .= apply_filters('wpunewsletter__after_main_field', '');
+        $main_newsletter_field .= ($widg_main_field_have_wrapper && $widg_fields_has_wrapper) ? '</p>' : '';
+        $main_newsletter_field .= apply_filters('wpunewsletter__after_main_field', '', $instance);
 
         if ($main_newsletter_field == 'before') {
             $default_widget_content .= $main_newsletter_field;
@@ -1198,9 +1200,9 @@ class wpunewsletter_form extends WP_Widget {
             $default_widget_content .= $main_newsletter_field;
         }
 
-        $default_widget_content .= apply_filters('wpunewsletter__before_submit_button', '');
+        $default_widget_content .= apply_filters('wpunewsletter__before_submit_button', '', $instance);
         $default_widget_content .= '<button type="submit" class="' . $widg_classes_button . '">' . $widg_content_button . '</button>';
-        $default_widget_content .= apply_filters('wpunewsletter__ater_submit_button', '');
+        $default_widget_content .= apply_filters('wpunewsletter__after_submit_button', '', $instance);
 
         $default_widget_content .= $widg_form_has_wrapper ? '</div>' : '';
         $default_widget_content .= '<div class="messages"></div></form>';
