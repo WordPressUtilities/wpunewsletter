@@ -3,7 +3,7 @@
 /*
 Plugin Name: WP Utilities Newsletter
 Description: Allow subscriptions to a newsletter.
-Version: 1.31.1
+Version: 1.31.2
 Author: Darklg
 Author URI: http://darklg.me/
 License: MIT License
@@ -26,7 +26,7 @@ License URI: http://opensource.org/licenses/MIT
 $wpunewsletter_messages = array();
 
 class WPUNewsletter {
-    public $plugin_version = '1.31.0';
+    public $plugin_version = '1.31.2';
     public $table_name;
     public $extra_fields;
     public $custom_queries;
@@ -1115,6 +1115,7 @@ class wpunewsletter_form extends WP_Widget {
             'fields_has_wrapper' => true,
             'main_field_have_wrapper' => true,
             'hidden_fields' => array(),
+            'extra_fields_values' => array(),
             'main_field_position' => 'before',
             'classes_mainfield' => '',
             'classes_fieldwrapper' => 'field',
@@ -1129,23 +1130,24 @@ class wpunewsletter_form extends WP_Widget {
 
         /* - SETTINGS -  */
 
-        $widg_content_label = apply_filters('wpunewsletter_form_widget_content_label', $curr_instance['content_label']);
-        $widg_content_placeholder = apply_filters('wpunewsletter_form_widget_content_placeholder', $curr_instance['content_placeholder']);
-        $widg_content_button = apply_filters('wpunewsletter_form_widget_content_button', $curr_instance['content_button']);
+        $widg_content_label = apply_filters('wpunewsletter_form_widget_content_label', $curr_instance['content_label'], $instance);
+        $widg_content_placeholder = apply_filters('wpunewsletter_form_widget_content_placeholder', $curr_instance['content_placeholder'], $instance);
+        $widg_content_button = apply_filters('wpunewsletter_form_widget_content_button', $curr_instance['content_button'], $instance);
 
         /* Display */
-        $widg_form_has_wrapper = apply_filters('wpunewsletter_form_widget_form_has_wrapper', $curr_instance['form_has_wrapper']);
-        $widg_fields_has_wrapper = apply_filters('wpunewsletter_form_widget_fields_has_wrapper', $curr_instance['fields_has_wrapper']);
-        $widg_main_field_have_wrapper = apply_filters('wpunewsletter_form_widget_main_field_have_wrapper', $curr_instance['main_field_have_wrapper']);
-        $widg_hidden_fields = apply_filters('wpunewsletter_form_widget_hidden_fields', $curr_instance['hidden_fields']);
-        $widg_main_field_position = apply_filters('wpunewsletter_form_widget_main_field_position', $curr_instance['main_field_position']);
+        $widg_form_has_wrapper = apply_filters('wpunewsletter_form_widget_form_has_wrapper', $curr_instance['form_has_wrapper'], $instance);
+        $widg_fields_has_wrapper = apply_filters('wpunewsletter_form_widget_fields_has_wrapper', $curr_instance['fields_has_wrapper'], $instance);
+        $widg_main_field_have_wrapper = apply_filters('wpunewsletter_form_widget_main_field_have_wrapper', $curr_instance['main_field_have_wrapper'], $instance);
+        $widg_hidden_fields = apply_filters('wpunewsletter_form_widget_hidden_fields', $curr_instance['hidden_fields'], $instance);
+        $widg_extra_fields_values = apply_filters('wpunewsletter_form_widget_extra_fields_values', $curr_instance['extra_fields_values'], $instance);
+        $widg_main_field_position = apply_filters('wpunewsletter_form_widget_main_field_position', $curr_instance['main_field_position'], $instance);
 
         /* Classes */
-        $widg_classes_mainfield = apply_filters('wpunewsletter_form_widget_classes_mainfield', $curr_instance['classes_mainfield']);
-        $widg_classes_fieldwrapper = apply_filters('wpunewsletter_form_widget_classes_fieldwrapper', $curr_instance['classes_fieldwrapper']);
-        $widg_classes_button = apply_filters('wpunewsletter_form_widget_classes_button', $curr_instance['classes_button']);
-        $widg_classes_form = apply_filters('wpunewsletter_form_widget_classes_form', $curr_instance['classes_form']);
-        $widg_classes_label = apply_filters('wpunewsletter_form_widget_classes_label', $curr_instance['classes_label']);
+        $widg_classes_mainfield = apply_filters('wpunewsletter_form_widget_classes_mainfield', $curr_instance['classes_mainfield'], $instance);
+        $widg_classes_fieldwrapper = apply_filters('wpunewsletter_form_widget_classes_fieldwrapper', $curr_instance['classes_fieldwrapper'], $instance);
+        $widg_classes_button = apply_filters('wpunewsletter_form_widget_classes_button', $curr_instance['classes_button'], $instance);
+        $widg_classes_form = apply_filters('wpunewsletter_form_widget_classes_form', $curr_instance['classes_form'], $instance);
+        $widg_classes_label = apply_filters('wpunewsletter_form_widget_classes_label', $curr_instance['classes_label'], $instance);
 
         /* - FORM -  */
 
@@ -1171,8 +1173,12 @@ class wpunewsletter_form extends WP_Widget {
             if ($field['required']) {
                 $_idname .= ' required="required" ';
             }
+            $field_value = $field['default_value'];
+            if(is_array($widg_extra_fields_values) && isset($widg_extra_fields_values[$id])){
+                $field_value = $widg_extra_fields_values[$id];
+            }
             if (in_array($id, $widg_hidden_fields) || array_key_exists($id, $widg_hidden_fields)) {
-                $default_widget_content .= '<input type="hidden" ' . $_idname . ' value="' . esc_attr($field['default_value']) . '" />';
+                $default_widget_content .= '<input type="hidden" ' . $_idname . ' value="' . esc_attr($field_value) . '" />';
                 continue;
             }
             $field_name = $field['name'];
@@ -1186,7 +1192,7 @@ class wpunewsletter_form extends WP_Widget {
 
             switch ($field['type']) {
             case 'checkbox':
-                $default_widget_content .= $_label_before . '<input class="' . $field['field_classname'] . ' " type="checkbox" ' . $_idname . ' ' . ($field['default_value'] == '1' ? 'checked="checked"' : '') . ' value="1" /> ' . '<span>' . $field_name . '</span>' . $_label_after;
+                $default_widget_content .= $_label_before . '<input class="' . $field['field_classname'] . ' " type="checkbox" ' . $_idname . ' ' . ($field_value == '1' ? 'checked="checked"' : '') . ' value="1" /> ' . '<span>' . $field_name . '</span>' . $_label_after;
                 break;
             default:
 
