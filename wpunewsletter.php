@@ -3,7 +3,7 @@
 /*
 Plugin Name: WP Utilities Newsletter
 Description: Allow subscriptions to a newsletter.
-Version: 1.31.2
+Version: 1.32.0
 Author: Darklg
 Author URI: http://darklg.me/
 License: MIT License
@@ -26,7 +26,7 @@ License URI: http://opensource.org/licenses/MIT
 $wpunewsletter_messages = array();
 
 class WPUNewsletter {
-    public $plugin_version = '1.31.2';
+    public $plugin_version = '1.32.0';
     public $table_name;
     public $extra_fields;
     public $custom_queries;
@@ -1108,6 +1108,7 @@ class wpunewsletter_form extends WP_Widget {
         global $wpunewsletter_messages, $WPUNewsletter;
 
         $curr_instance = array(
+            'js_callback_before_submit' => '',
             'content_label' => __('Email', 'wpunewsletter'),
             'content_placeholder' => __('Your email address', 'wpunewsletter'),
             'content_button' => __('Register', 'wpunewsletter'),
@@ -1117,6 +1118,7 @@ class wpunewsletter_form extends WP_Widget {
             'hidden_fields' => array(),
             'extra_fields_values' => array(),
             'main_field_position' => 'before',
+            'form_id' => 'newsletter-form',
             'classes_mainfield' => '',
             'classes_fieldwrapper' => 'field',
             'classes_form' => 'newsletter-form',
@@ -1130,6 +1132,9 @@ class wpunewsletter_form extends WP_Widget {
 
         /* - SETTINGS -  */
 
+        $widg_js_callback_before_submit = apply_filters('wpunewsletter_form_widget_js_callback_before_submit', $curr_instance['js_callback_before_submit'], $instance);
+
+        /* Elements */
         $widg_content_label = apply_filters('wpunewsletter_form_widget_content_label', $curr_instance['content_label'], $instance);
         $widg_content_placeholder = apply_filters('wpunewsletter_form_widget_content_placeholder', $curr_instance['content_placeholder'], $instance);
         $widg_content_button = apply_filters('wpunewsletter_form_widget_content_button', $curr_instance['content_button'], $instance);
@@ -1143,15 +1148,23 @@ class wpunewsletter_form extends WP_Widget {
         $widg_main_field_position = apply_filters('wpunewsletter_form_widget_main_field_position', $curr_instance['main_field_position'], $instance);
 
         /* Classes */
+        $widg_form_id = apply_filters('wpunewsletter_form_widget_form_id', $curr_instance['form_id'], $instance);
         $widg_classes_mainfield = apply_filters('wpunewsletter_form_widget_classes_mainfield', $curr_instance['classes_mainfield'], $instance);
         $widg_classes_fieldwrapper = apply_filters('wpunewsletter_form_widget_classes_fieldwrapper', $curr_instance['classes_fieldwrapper'], $instance);
         $widg_classes_button = apply_filters('wpunewsletter_form_widget_classes_button', $curr_instance['classes_button'], $instance);
         $widg_classes_form = apply_filters('wpunewsletter_form_widget_classes_form', $curr_instance['classes_form'], $instance);
         $widg_classes_label = apply_filters('wpunewsletter_form_widget_classes_label', $curr_instance['classes_label'], $instance);
 
+        $js_form_settings = array(
+            'id' => $widg_form_id,
+            'js_callback_before_submit' => $widg_js_callback_before_submit
+        );
+
         /* - FORM -  */
 
-        $default_widget_content = '<form class="wpunewsletter-form ' . $widg_classes_form . '" id="wpunewsletter-form" action="" method="post">';
+        $default_widget_content = '<form class="wpunewsletter-form ' . $widg_classes_form . '" id="' . $widg_form_id . '" action="" method="post">';
+        $default_widget_content .= '<script>if(!window.wpunewsletter_forms){window.wpunewsletter_forms=[];}</script>';
+        $default_widget_content .= '<script>window.wpunewsletter_forms[\'' . $widg_form_id . '\']='.json_encode($js_form_settings).';</script>';
         $default_widget_content .= $widg_form_has_wrapper ? '<div class="wpunewsletter-form-wrapper">' : '';
 
         $main_newsletter_field = '';
@@ -1174,7 +1187,7 @@ class wpunewsletter_form extends WP_Widget {
                 $_idname .= ' required="required" ';
             }
             $field_value = $field['default_value'];
-            if(is_array($widg_extra_fields_values) && isset($widg_extra_fields_values[$id])){
+            if (is_array($widg_extra_fields_values) && isset($widg_extra_fields_values[$id])) {
                 $field_value = $widg_extra_fields_values[$id];
             }
             if (in_array($id, $widg_hidden_fields) || array_key_exists($id, $widg_hidden_fields)) {

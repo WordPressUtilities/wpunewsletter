@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
-"POT-Creation-Date: 2018-05-08 23:49+0200\n"
+"POT-Creation-Date: 2018-05-15 16:57+0200\n"
 "PO-Revision-Date: \n"
 "Last-Translator: Darklg <darklg.blog@gmail.com>\n"
 "Language-Team: \n"
@@ -73,7 +73,7 @@ msgstr "Liste des abonnés : %s"
 msgid "ID"
 msgstr "ID"
 
-#: .././wpunewsletter.php:294 .././wpunewsletter.php:1111
+#: .././wpunewsletter.php:294 .././wpunewsletter.php:1112
 msgid "Email"
 msgstr "E-Mail"
 
@@ -240,11 +240,11 @@ msgstr ""
 msgid "Thank you !"
 msgstr "Merci !"
 
-#: .././wpunewsletter.php:1112
+#: .././wpunewsletter.php:1113
 msgid "Your email address"
 msgstr "Votre adresse email"
 
-#: .././wpunewsletter.php:1113
+#: .././wpunewsletter.php:1114
 msgid "Register"
 msgstr "S'inscrire"
 
