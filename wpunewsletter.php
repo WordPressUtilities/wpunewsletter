@@ -3,7 +3,7 @@
 /*
 Plugin Name: WP Utilities Newsletter
 Description: Allow subscriptions to a newsletter.
-Version: 1.32.0
+Version: 1.33.0
 Author: Darklg
 Author URI: http://darklg.me/
 License: MIT License
@@ -26,7 +26,7 @@ License URI: http://opensource.org/licenses/MIT
 $wpunewsletter_messages = array();
 
 class WPUNewsletter {
-    public $plugin_version = '1.32.0';
+    public $plugin_version = '1.33.0';
     public $table_name;
     public $extra_fields;
     public $custom_queries;
@@ -832,6 +832,16 @@ class WPUNewsletter {
         return $html;
     }
 
+    public function form_item__editor($id, $name, $settings = array()) {
+        $html = '<p>';
+        $html .= '<strong><label for="' . $id . '">' . $name . '</label></strong><br />';
+        ob_start();
+        wp_editor(get_option($id), $id, $settings);
+        $html .= ob_get_clean();
+        $html .= '</p>';
+        return $html;
+    }
+
     public function page_content_settings() {
         if (!current_user_can($this->min_admin_level)) {
             return;
@@ -840,15 +850,22 @@ class WPUNewsletter {
         echo $this->display_messages();
         echo '<form action="" method="post">';
 
-        echo $this->form_item__checkbox('wpunewsletter_send_confirmation_email', __('Send confirmation email', 'wpunewsletter'));
         echo $this->form_item__checkbox('wpunewsletter_use_jquery_ajax', __('Use jQuery AJAX', 'wpunewsletter'));
+
+        echo '<hr /><h3>' . __('GPRD', 'wpunewsletter') . '</h3>';
+        echo $this->form_item__editor('wpunewsletter_gprdtext', __('GPRD text under newsletter', 'wpunewsletter'), array(
+            'media_buttons' => false,
+            'teeny' => true,
+            'textarea_rows' => 3
+        ));
+        echo $this->form_item__checkbox('wpunewsletter_send_confirmation_email', __('Send confirmation email', 'wpunewsletter'));
 
         echo '<hr /><h3>' . __('Outgoing emails', 'wpunewsletter') . '</h3>';
         echo $this->form_item__text('wpunewsletter_useremailfromname', __('From name', 'wpunewsletter'));
         echo $this->form_item__text('wpunewsletter_useremailfromaddress', __('From address', 'wpunewsletter'), 'email');
+
         echo '<hr /><h3>' . __('Mailchimp', 'wpunewsletter') . '</h3>';
         echo $this->form_item__checkbox('wpunewsletter_mailchimp_active', __('Use Mailchimp', 'wpunewsletter'));
-
         $_mailchimpIsOpen = (get_option('wpunewsletter_mailchimp_active') == '1');
         echo '<div id="wpunewsletter-mailchimp-detail" style="' . ($_mailchimpIsOpen ? '' : 'display: none;') . '">';
         echo $this->form_item__checkbox('wpunewsletter_mailchimp_double_optin', __('Use double optin', 'wpunewsletter'));
@@ -888,6 +905,14 @@ class WPUNewsletter {
         );
         foreach ($checkbox_fields as $field) {
             update_option($field, (isset($_POST[$field]) ? 1 : ''));
+        }
+
+        /* Update HTML fields */
+        $editor_fields = array(
+            'wpunewsletter_gprdtext'
+        );
+        foreach ($editor_fields as $field) {
+            update_option($field, $_POST[$field]);
         }
 
         /* Update text fields */
@@ -1114,11 +1139,13 @@ class wpunewsletter_form extends WP_Widget {
             'content_button' => __('Register', 'wpunewsletter'),
             'form_has_wrapper' => true,
             'fields_has_wrapper' => true,
+            'messages_over_form' => true,
             'main_field_have_wrapper' => true,
             'hidden_fields' => array(),
             'extra_fields_values' => array(),
             'main_field_position' => 'before',
             'form_id' => 'newsletter-form',
+            'gprdtext' => get_option('wpunewsletter_gprdtext'),
             'classes_mainfield' => '',
             'classes_fieldwrapper' => 'field',
             'classes_form' => 'newsletter-form',
@@ -1143,9 +1170,13 @@ class wpunewsletter_form extends WP_Widget {
         $widg_form_has_wrapper = apply_filters('wpunewsletter_form_widget_form_has_wrapper', $curr_instance['form_has_wrapper'], $instance);
         $widg_fields_has_wrapper = apply_filters('wpunewsletter_form_widget_fields_has_wrapper', $curr_instance['fields_has_wrapper'], $instance);
         $widg_main_field_have_wrapper = apply_filters('wpunewsletter_form_widget_main_field_have_wrapper', $curr_instance['main_field_have_wrapper'], $instance);
+        $widg_messages_over_form = apply_filters('wpunewsletter_form_widget_messages_over_form', $curr_instance['messages_over_form'], $instance);
         $widg_hidden_fields = apply_filters('wpunewsletter_form_widget_hidden_fields', $curr_instance['hidden_fields'], $instance);
         $widg_extra_fields_values = apply_filters('wpunewsletter_form_widget_extra_fields_values', $curr_instance['extra_fields_values'], $instance);
         $widg_main_field_position = apply_filters('wpunewsletter_form_widget_main_field_position', $curr_instance['main_field_position'], $instance);
+
+        /* Text */
+        $widg_gprdtext = trim(apply_filters('wpunewsletter_form_widget_gprdtext', $curr_instance['gprdtext'], $instance));
 
         /* Classes */
         $widg_form_id = apply_filters('wpunewsletter_form_widget_form_id', $curr_instance['form_id'], $instance);
@@ -1164,7 +1195,10 @@ class wpunewsletter_form extends WP_Widget {
 
         $default_widget_content = '<form class="wpunewsletter-form ' . $widg_classes_form . '" id="' . $widg_form_id . '" action="" method="post">';
         $default_widget_content .= '<script>if(!window.wpunewsletter_forms){window.wpunewsletter_forms=[];}</script>';
-        $default_widget_content .= '<script>window.wpunewsletter_forms[\'' . $widg_form_id . '\']='.json_encode($js_form_settings).';</script>';
+        $default_widget_content .= '<script>window.wpunewsletter_forms[\'' . $widg_form_id . '\']=' . json_encode($js_form_settings) . ';</script>';
+        if ($widg_messages_over_form) {
+            $default_widget_content .= '<div class="messages"></div>';
+        }
         $default_widget_content .= $widg_form_has_wrapper ? '<div class="wpunewsletter-form-wrapper">' : '';
 
         $main_newsletter_field = '';
@@ -1224,7 +1258,13 @@ class wpunewsletter_form extends WP_Widget {
         $default_widget_content .= apply_filters('wpunewsletter__after_submit_button', '', $instance);
 
         $default_widget_content .= $widg_form_has_wrapper ? '</div>' : '';
-        $default_widget_content .= '<div class="messages"></div></form>';
+        if (!$widg_messages_over_form) {
+            $default_widget_content .= '<div class="messages"></div>';
+        }
+        $default_widget_content .= '</form>';
+        if (!empty($widg_gprdtext)) {
+            $default_widget_content .= '<div class="wpunewsletter-gdprtext">' . $widg_gprdtext . '</div>';
+        }
 
         echo $args['before_widget'];
         if ($title = apply_filters('widget_title', empty($instance['title']) ? '' : $instance['title'])) {
