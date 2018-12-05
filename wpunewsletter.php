@@ -3,7 +3,7 @@
 /*
 Plugin Name: WP Utilities Newsletter
 Description: Allow subscriptions to a newsletter.
-Version: 1.33.1
+Version: 1.34.0
 Author: Darklg
 Author URI: http://darklg.me/
 License: MIT License
@@ -26,7 +26,7 @@ License URI: http://opensource.org/licenses/MIT
 $wpunewsletter_messages = array();
 
 class WPUNewsletter {
-    public $plugin_version = '1.33.1';
+    public $plugin_version = '1.34.0';
     public $table_name;
     public $extra_fields;
     public $custom_queries;
@@ -49,9 +49,16 @@ class WPUNewsletter {
             $this->wpunewsletter_activate();
         }
 
+        if(is_admin() && $wpdb->get_var("SHOW TABLES LIKE '{$this->table_name}'") != $this->table_name) {
+            $this->wpunewsletter_activate_db();
+        }
+
         /* Hooks */
-        add_action('init', array(&$this,
+        add_action('plugins_loaded', array(&$this,
             'load_translation'
+        ));
+        add_action('plugins_loaded', array(&$this,
+            'plugins_loaded'
         ));
         add_action('init', array(&$this,
             'load_values'
@@ -101,6 +108,14 @@ class WPUNewsletter {
         add_action('wp_enqueue_scripts', array(&$this,
             'enqueue_scripts'
         ));
+    }
+
+    public function plugins_loaded(){
+        include dirname( __FILE__ ) . '/inc/WPUBaseUpdate/WPUBaseUpdate.php';
+        $this->settings_update = new \wpunewsletter\WPUBaseUpdate(
+            'WordPressUtilities',
+            'wpunewsletter',
+            $this->plugin_version);
     }
 
     // Translation
@@ -946,9 +961,17 @@ class WPUNewsletter {
     ---------------------------------------------------------- */
 
     public function wpunewsletter_activate() {
+        $this->wpunewsletter_activate_options();
+        $this->wpunewsletter_activate_db();
+    }
 
+    public function wpunewsletter_activate_options() {
         // Default values
         update_option('wpunewsletter_send_confirmation_email', 1);
+    }
+
+    public function wpunewsletter_activate_db() {
+        // DB Version
         update_option('wpunewsletter_db_version', $this->plugin_version);
 
         // Create or update database
