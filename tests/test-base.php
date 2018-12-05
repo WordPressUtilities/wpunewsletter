@@ -11,8 +11,8 @@ class BaseTest extends WP_UnitTestCase {
     function test_init_plugin() {
 
         // Test plugin init
-        do_action('init');
-        $this->assertEquals(10, has_action('init', array(
+        do_action('plugins_loaded');
+        $this->assertEquals(10, has_action('plugins_loaded', array(
             $this->plugin,
             'load_translation'
         )));
