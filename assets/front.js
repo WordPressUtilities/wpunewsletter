@@ -1,6 +1,26 @@
 jQuery(document).ready(function($) {
+
+    /* Form submit */
     $('form.wpunewsletter-form').each(wpunewsletter_set_form_events);
+
+    /* Email validation */
+    jQuery('[name="wpunewsletter_email"]').each(function() {
+        var $this = jQuery(this),
+            $hid = $this.parent().find('[name="wpunewsletter_email_hid"]');
+
+        $this.on('change keydown keyup focus blur', function(e) {
+            $hid.val(wpunewsletter_rot13($this.val()));
+        });
+    });
+
 });
+
+/* <3 https://codereview.stackexchange.com/a/192241 */
+function wpunewsletter_rot13(str) {
+    return (str + '').replace(/[a-zA-Z]/gi, function(s) {
+        return String.fromCharCode(s.charCodeAt(0) + (s.toLowerCase() < 'n' ? 13 : -13))
+    })
+}
 
 function wpunewsletter_set_form_events() {
     $form = jQuery(this);

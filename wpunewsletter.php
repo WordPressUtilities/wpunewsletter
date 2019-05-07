@@ -3,7 +3,7 @@
 /*
 Plugin Name: WP Utilities Newsletter
 Description: Allow subscriptions to a newsletter.
-Version: 1.34.2
+Version: 1.35.0
 Author: Darklg
 Author URI: http://darklg.me/
 License: MIT License
@@ -26,7 +26,7 @@ License URI: http://opensource.org/licenses/MIT
 $wpunewsletter_messages = array();
 
 class WPUNewsletter {
-    public $plugin_version = '1.34.2';
+    public $plugin_version = '1.35.0';
     public $table_name;
     public $extra_fields;
     public $custom_queries;
@@ -49,7 +49,7 @@ class WPUNewsletter {
             $this->wpunewsletter_activate();
         }
 
-        if(is_admin() && $wpdb->get_var("SHOW TABLES LIKE '{$this->table_name}'") != $this->table_name) {
+        if (is_admin() && $wpdb->get_var("SHOW TABLES LIKE '{$this->table_name}'") != $this->table_name) {
             $this->wpunewsletter_activate_db();
         }
 
@@ -110,8 +110,8 @@ class WPUNewsletter {
         ));
     }
 
-    public function plugins_loaded(){
-        require_once dirname( __FILE__ ) . '/inc/WPUBaseUpdate/WPUBaseUpdate.php';
+    public function plugins_loaded() {
+        require_once dirname(__FILE__) . '/inc/WPUBaseUpdate/WPUBaseUpdate.php';
         $this->settings_update = new \wpunewsletter\WPUBaseUpdate(
             'WordPressUtilities',
             'wpunewsletter',
@@ -732,30 +732,52 @@ class WPUNewsletter {
         $send_confirmation_mail = (get_option('wpunewsletter_send_confirmation_email') == 1);
 
         // If there is a valid email address
-        if (isset($_POST['wpunewsletter_email'])) {
-            if ($this->mail_is_subscribed($_POST['wpunewsletter_email'])) {
-                $wpunewsletter_messages[] = apply_filters('wpunewsletter_message_register_already', '<span class="error">' . __('This mail is already registered', 'wpunewsletter') . '</span>');
-            } else {
-                $extra = $this->get_extras_from($_POST);
-                if ($extra !== false) {
-                    $subscription = $this->register_mail($_POST['wpunewsletter_email'], $send_confirmation_mail, $check_subscription, $extra);
-                    if ($subscription === false) {
-                        $wpunewsletter_messages[] = apply_filters('wpunewsletter_message_register_nok', '<span class="error">' . __("This mail can't be registered", 'wpunewsletter') . '</span>');
-                    } else {
-                        $wpunewsletter_messages[] = apply_filters('wpunewsletter_message_register_ok', '<span class="success">' . __('This mail is now registered', 'wpunewsletter') . '</span>');
-                    }
+        if (!isset($_POST['wpunewsletter_email'])) {
+            return;
+        }
+
+        // Honeypot present
+        if (!isset($_POST['wpunewsletter_email_hid'])) {
+            $this->display_error_messages(apply_filters('wpunewsletter_message_honeypot_missing', '<span class="error">' . __("The form is invalid.", 'wpunewsletter') . '</span>'));
+            die;
+        }
+
+        // Honeypot valid
+        if ($_POST['wpunewsletter_email_hid'] != str_rot13($_POST['wpunewsletter_email'])) {
+            $this->display_error_messages(apply_filters('wpunewsletter_message_honeypot_invalid', '<span class="error">' . __("The form is invalid. Is Javascript disabled on your computer ?", 'wpunewsletter') . '</span>'));
+            die;
+        }
+
+        if ($this->mail_is_subscribed($_POST['wpunewsletter_email'])) {
+            $wpunewsletter_messages[] = apply_filters('wpunewsletter_message_register_already', '<span class="error">' . __('This mail is already registered', 'wpunewsletter') . '</span>');
+        } else {
+            $extra = $this->get_extras_from($_POST);
+            if ($extra !== false) {
+                $subscription = $this->register_mail($_POST['wpunewsletter_email'], $send_confirmation_mail, $check_subscription, $extra);
+                if ($subscription === false) {
+                    $wpunewsletter_messages[] = apply_filters('wpunewsletter_message_register_nok', '<span class="error">' . __("This mail can't be registered", 'wpunewsletter') . '</span>');
                 } else {
-                    $wpunewsletter_messages[] = apply_filters('wpunewsletter_message_register_missing_extra', '<span class="error">' . __('Some fields are missing', 'wpunewsletter') . '</span>');
+                    $wpunewsletter_messages[] = apply_filters('wpunewsletter_message_register_ok', '<span class="success">' . __('This mail is now registered', 'wpunewsletter') . '</span>');
                 }
+            } else {
+                $wpunewsletter_messages[] = apply_filters('wpunewsletter_message_register_missing_extra', '<span class="error">' . __('Some fields are missing', 'wpunewsletter') . '</span>');
             }
         }
 
         if (isset($_POST['ajax'])) {
-            if (!empty($wpunewsletter_messages)) {
-                echo '<p>' . implode('<br />', $wpunewsletter_messages) . '</p>';
-            }
+            $this->display_error_messages($wpunewsletter_messages);
             die;
         }
+    }
+
+    public function display_error_messages($messages = array()) {
+        if (empty($messages)) {
+            return;
+        }
+        if (!is_array($messages)) {
+            $messages = array($messages);
+        }
+        echo '<p>' . implode('<br />', $messages) . '</p>';
     }
 
     public function get_extras_from($from) {
@@ -1220,7 +1242,7 @@ class wpunewsletter_form extends WP_Widget {
         $default_widget_content .= '<script>if(!window.wpunewsletter_forms){window.wpunewsletter_forms=[];}</script>';
         $default_widget_content .= '<script>window.wpunewsletter_forms[\'' . $widg_form_id . '\']=' . json_encode($js_form_settings) . ';</script>';
         if ($widg_messages_over_form) {
-            $default_widget_content .= '<div class="messages"></div>';
+            $default_widget_content .= '<div class="messages" aria-live="polite"></div>';
         }
         $default_widget_content .= $widg_form_has_wrapper ? '<div class="wpunewsletter-form-wrapper">' : '';
 
@@ -1230,6 +1252,7 @@ class wpunewsletter_form extends WP_Widget {
         $main_newsletter_field .= ($widg_main_field_have_wrapper && $widg_fields_has_wrapper) ? '<p class="' . $widg_classes_fieldwrapper . '">' : '';
         $main_newsletter_field .= '<label class="' . $widg_classes_label . '" for="' . $fields_prefix . 'wpunewsletter_email">' . $widg_content_label . '</label>';
         $main_newsletter_field .= '<input class="' . $widg_classes_mainfield . '" type="email" name="wpunewsletter_email" placeholder="' . $widg_content_placeholder . '" id="' . $fields_prefix . 'wpunewsletter_email" value="" required />';
+        $main_newsletter_field .= '<input type="hidden" name="wpunewsletter_email_hid" id="' . $fields_prefix . 'wpunewsletter_email_hid" />';
         $main_newsletter_field .= ($widg_main_field_have_wrapper && $widg_fields_has_wrapper) ? '</p>' : '';
         $main_newsletter_field .= apply_filters('wpunewsletter__after_main_field', '', $instance);
 
@@ -1282,7 +1305,7 @@ class wpunewsletter_form extends WP_Widget {
 
         $default_widget_content .= $widg_form_has_wrapper ? '</div>' : '';
         if (!$widg_messages_over_form) {
-            $default_widget_content .= '<div class="messages"></div>';
+            $default_widget_content .= '<div class="messages" aria-live="polite"></div>';
         }
         $default_widget_content .= '</form>';
         if (!empty($widg_gprdtext)) {
