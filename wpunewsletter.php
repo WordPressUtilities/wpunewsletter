@@ -3,7 +3,7 @@
 /*
 Plugin Name: WP Utilities Newsletter
 Description: Allow subscriptions to a newsletter.
-Version: 1.35.0
+Version: 1.35.1
 Author: Darklg
 Author URI: http://darklg.me/
 License: MIT License
@@ -26,7 +26,7 @@ License URI: http://opensource.org/licenses/MIT
 $wpunewsletter_messages = array();
 
 class WPUNewsletter {
-    public $plugin_version = '1.35.0';
+    public $plugin_version = '1.35.1';
     public $table_name;
     public $extra_fields;
     public $custom_queries;
@@ -680,16 +680,20 @@ class WPUNewsletter {
         return isset($testbase->email);
     }
 
+    public function is_email($email) {
+        return filter_var($email, FILTER_VALIDATE_EMAIL) !== false;
+    }
+
     public function register_mail($email, $send_confirmation_mail = false, $check_subscription = false, $extra = array()) {
         global $wpunewsletter_messages, $wpdb;
 
-        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            return;
+        if (!$this->is_email($email)) {
+            return false;
         }
 
         // If mail is subscribed
         if ($check_subscription && $this->mail_is_subscribed($email)) {
-            return;
+            return false;
         }
 
         $secretkey = md5(microtime() . $email);
@@ -736,6 +740,11 @@ class WPUNewsletter {
             return;
         }
 
+        if(!$this->is_email($_POST['wpunewsletter_email'])){
+            $this->display_error_messages(apply_filters('wpunewsletter_message_not_email', '<span class="error">' . __("This is not an email address.", 'wpunewsletter') . '</span>'));
+            die;
+        }
+
         // Honeypot present
         if (!isset($_POST['wpunewsletter_email_hid'])) {
             $this->display_error_messages(apply_filters('wpunewsletter_message_honeypot_missing', '<span class="error">' . __("The form is invalid.", 'wpunewsletter') . '</span>'));
@@ -754,7 +763,7 @@ class WPUNewsletter {
             $extra = $this->get_extras_from($_POST);
             if ($extra !== false) {
                 $subscription = $this->register_mail($_POST['wpunewsletter_email'], $send_confirmation_mail, $check_subscription, $extra);
-                if ($subscription === false) {
+                if (!$subscription) {
                     $wpunewsletter_messages[] = apply_filters('wpunewsletter_message_register_nok', '<span class="error">' . __("This mail can't be registered", 'wpunewsletter') . '</span>');
                 } else {
                     $wpunewsletter_messages[] = apply_filters('wpunewsletter_message_register_ok', '<span class="success">' . __('This mail is now registered', 'wpunewsletter') . '</span>');
