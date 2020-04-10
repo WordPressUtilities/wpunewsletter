@@ -3,7 +3,7 @@
 /*
 Plugin Name: WP Utilities Newsletter
 Description: Allow subscriptions to a newsletter.
-Version: 1.36.0
+Version: 1.36.1
 Author: Darklg
 Author URI: http://darklg.me/
 License: MIT License
@@ -26,7 +26,7 @@ License URI: http://opensource.org/licenses/MIT
 $wpunewsletter_messages = array();
 
 class WPUNewsletter {
-    public $plugin_version = '1.36.0';
+    public $plugin_version = '1.36.1';
     public $table_name;
     public $extra_fields;
     public $custom_queries;
@@ -1033,6 +1033,9 @@ class WPUNewsletter {
     }
 
     public function comment_unapproved_to_approved($comment) {
+        if (get_option('wpunewsletter_checkbox_comments') != '1') {
+            return;
+        }
         if (!is_object($comment)) {
             $comment = get_comment($comment);
         }
