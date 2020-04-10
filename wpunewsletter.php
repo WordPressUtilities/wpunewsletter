@@ -3,7 +3,7 @@
 /*
 Plugin Name: WP Utilities Newsletter
 Description: Allow subscriptions to a newsletter.
-Version: 1.35.1
+Version: 1.36.0
 Author: Darklg
 Author URI: http://darklg.me/
 License: MIT License
@@ -26,7 +26,7 @@ License URI: http://opensource.org/licenses/MIT
 $wpunewsletter_messages = array();
 
 class WPUNewsletter {
-    public $plugin_version = '1.35.1';
+    public $plugin_version = '1.36.0';
     public $table_name;
     public $extra_fields;
     public $custom_queries;
@@ -93,6 +93,16 @@ class WPUNewsletter {
 
         add_shortcode('wpunewsletter', array(&$this,
             'form_shortcode'
+        ));
+
+        add_filter('comment_form_fields', array(&$this,
+            'comment_form_fields'
+        ), 999, 1);
+        add_action('comment_post', array(&$this,
+            'comment_post'
+        ));
+        add_action('comment_unapproved_to_approved', array(&$this,
+            'comment_unapproved_to_approved'
         ));
 
         // Mailchimp
@@ -740,7 +750,7 @@ class WPUNewsletter {
             return;
         }
 
-        if(!$this->is_email($_POST['wpunewsletter_email'])){
+        if (!$this->is_email($_POST['wpunewsletter_email'])) {
             $this->display_error_messages(apply_filters('wpunewsletter_message_not_email', '<span class="error">' . __("This is not an email address.", 'wpunewsletter') . '</span>'));
             die;
         }
@@ -896,7 +906,7 @@ class WPUNewsletter {
         echo $this->display_messages();
         echo '<form action="" method="post">';
 
-        echo $this->form_item__checkbox('wpunewsletter_use_jquery_ajax', __('Use jQuery AJAX', 'wpunewsletter'));
+        echo $this->form_item__checkbox('wpunewsletter_checkbox_comments', __('Register in comments', 'wpunewsletter'));
 
         echo '<hr /><h3>' . __('GPRD', 'wpunewsletter') . '</h3>';
         echo $this->form_item__editor('wpunewsletter_gprdtext', __('GPRD text under newsletter', 'wpunewsletter'), array(
@@ -945,7 +955,7 @@ class WPUNewsletter {
         /* Update checkbox fields */
         $checkbox_fields = array(
             'wpunewsletter_send_confirmation_email',
-            'wpunewsletter_use_jquery_ajax',
+            'wpunewsletter_checkbox_comments',
             'wpunewsletter_mailchimp_active',
             'wpunewsletter_mailchimp_double_optin'
         );
@@ -988,6 +998,60 @@ class WPUNewsletter {
     }
 
     /* ----------------------------------------------------------
+      Comments
+    ---------------------------------------------------------- */
+
+    public function comment_form_fields($fields) {
+        if (get_option('wpunewsletter_checkbox_comments') != '1') {
+            return $fields;
+        }
+        $fields['newsletter'] = '<p class="comment-form-register-newsletter">' .
+        '<input id="wp-comment-register-newsletter" name="wp-comment-register-newsletter" value="1" type="checkbox" />' .
+        ' ' .
+        '<label for="wp-comment-register-newsletter">' . apply_filters('wpunewsletter_register_newsletter_comments_label', __('Register to our newsletter', 'wpunewsletter')) . '</label>' .
+            '</p>';
+
+        return $fields;
+    }
+
+    public function comment_post($comment_id) {
+        if (get_option('wpunewsletter_checkbox_comments') != '1') {
+            return;
+        }
+        if (!isset($_POST['wp-comment-register-newsletter']) || $_POST['wp-comment-register-newsletter'] != '1') {
+            return;
+        }
+
+        $comment_status = wp_get_comment_status($comment_id);
+        if ($comment_status != 'approved') {
+            update_comment_meta($comment_id, 'wpunewsletter_register', '2', true);
+            error_log($comment_status);
+            return;
+        }
+
+        $this->register_commenter($comment_id);
+    }
+
+    public function comment_unapproved_to_approved($comment) {
+        if (!is_object($comment)) {
+            $comment = get_comment($comment);
+        }
+        $this->register_commenter($comment->comment_ID);
+    }
+
+    public function register_commenter($comment_id) {
+        $is_registered = get_comment_meta($comment_id, 'wpunewsletter_register', 1);
+        if ($is_registered == '1') {
+            return;
+        }
+        update_comment_meta($comment_id, 'wpunewsletter_register', '1', true);
+        $comment_details = get_comment($comment_id);
+        if (isset($comment_details->comment_author_email) || is_email($comment_details->comment_author_email)) {
+            $this->register_mail($comment_details->comment_author_email, (get_option('wpunewsletter_send_confirmation_email') == 1), true, array());
+        }
+    }
+
+    /* ----------------------------------------------------------
       Model
     ---------------------------------------------------------- */
 
@@ -1025,15 +1089,16 @@ class WPUNewsletter {
         ---------------------------------------------------------- */
 
         $options = array(
+            'wpunewsletter_checkbox_comments',
             'wpunewsletter_db_version',
-            'wpunewsletter_useremailfromname',
-            'wpunewsletter_useremailfromaddress',
+            'wpunewsletter_mailchimp_active',
+            'wpunewsletter_mailchimp_apikey',
+            'wpunewsletter_mailchimp_double_optin',
+            'wpunewsletter_mailchimp_listid',
             'wpunewsletter_send_confirmation_email',
             'wpunewsletter_use_jquery_ajax',
-            'wpunewsletter_mailchimp_active',
-            'wpunewsletter_mailchimp_double_optin',
-            'wpunewsletter_mailchimp_apikey',
-            'wpunewsletter_mailchimp_listid'
+            'wpunewsletter_useremailfromaddress',
+            'wpunewsletter_useremailfromname'
         );
         foreach ($options as $option_name) {
             delete_option($option_name);
