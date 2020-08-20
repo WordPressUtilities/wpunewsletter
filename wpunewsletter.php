@@ -3,7 +3,7 @@
 /*
 Plugin Name: WP Utilities Newsletter
 Description: Allow subscriptions to a newsletter.
-Version: 1.36.2
+Version: 1.37.0
 Author: Darklg
 Author URI: http://darklg.me/
 License: MIT License
@@ -26,7 +26,7 @@ License URI: http://opensource.org/licenses/MIT
 $wpunewsletter_messages = array();
 
 class WPUNewsletter {
-    public $plugin_version = '1.36.2';
+    public $plugin_version = '1.37.0';
     public $table_name;
     public $extra_fields;
     public $custom_queries;
@@ -62,6 +62,9 @@ class WPUNewsletter {
         ));
         add_action('init', array(&$this,
             'load_values'
+        ));
+        add_action('init', array(&$this,
+            'autodelete_mails'
         ));
         add_action('admin_menu', array(&$this,
             'menu_page'
@@ -136,6 +139,10 @@ class WPUNewsletter {
     public function load_values() {
         $this->load_extra_fields(apply_filters('wpunewsletter_extra_fields', array()));
         $this->custom_queries = apply_filters('wpunewsletter_custom_export_queries', array());
+        $this->nb_years_autodelete = apply_filters('wpunewsletter_nb_years_autodelete', 3);
+        if (!is_numeric($this->nb_years_autodelete)) {
+            $this->nb_years_autodelete = 3;
+        }
     }
 
     public function load_extra_fields($extra_fields) {
@@ -921,6 +928,7 @@ class WPUNewsletter {
             'textarea_rows' => 3
         ));
         echo $this->form_item__checkbox('wpunewsletter_send_confirmation_email', __('Send confirmation email', 'wpunewsletter'));
+        echo $this->form_item__checkbox('wpunewsletter_autodelete', sprintf(__('Auto-delete subscriptions after %s years', 'wpunewsletter'), $this->nb_years_autodelete));
 
         echo '<hr /><h3>' . __('Outgoing emails', 'wpunewsletter') . '</h3>';
         echo $this->form_item__text('wpunewsletter_useremailfromname', __('From name', 'wpunewsletter'));
@@ -962,6 +970,7 @@ class WPUNewsletter {
         $checkbox_fields = array(
             'wpunewsletter_send_confirmation_email',
             'wpunewsletter_checkbox_comments',
+            'wpunewsletter_autodelete',
             'wpunewsletter_mailchimp_active',
             'wpunewsletter_mailchimp_double_optin'
         );
@@ -1001,6 +1010,29 @@ class WPUNewsletter {
                 $this->admin_messages[] = __('Failure : Mailchimp IDs are not correct', 'wpunewsletter');
             }
         }
+    }
+
+    /* ----------------------------------------------------------
+      Auto-Delete
+    ---------------------------------------------------------- */
+
+    public function autodelete_mails() {
+
+        /* Stop if auto-delete is not enabled */
+        $wpunewsletter_autodelete = get_option('wpunewsletter_autodelete');
+        if ($wpunewsletter_autodelete != '1') {
+            return;
+        }
+
+        /* Stop if script has already run today */
+        if (get_transient('wpunewsletter_autodelete_marker') == '1') {
+            return;
+        }
+        set_transient('wpunewsletter_autodelete_marker', '1', apply_filters('wpunewsletter_autodelete_frequency', DAY_IN_SECONDS));
+
+        /* Delete old emails */
+        global $wpdb;
+        $wpdb->query("DELETE FROM " . $this->table_name . " WHERE DATE(date_register) < DATE_SUB(CURDATE(), INTERVAL " . $this->nb_years_autodelete . " YEAR) ");
     }
 
     /* ----------------------------------------------------------
