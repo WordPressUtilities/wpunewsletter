@@ -3,7 +3,7 @@
 /*
 Plugin Name: WP Utilities Newsletter
 Description: Allow subscriptions to a newsletter.
-Version: 1.37.0
+Version: 1.38.0
 Author: Darklg
 Author URI: http://darklg.me/
 License: MIT License
@@ -26,7 +26,7 @@ License URI: http://opensource.org/licenses/MIT
 $wpunewsletter_messages = array();
 
 class WPUNewsletter {
-    public $plugin_version = '1.37.0';
+    public $plugin_version = '1.38.0';
     public $table_name;
     public $extra_fields;
     public $custom_queries;
@@ -1212,6 +1212,10 @@ class WPUNewsletter {
 
     public function export_csv($results, $file_name) {
 
+        $delimiter = apply_filters('wpunewsletter__export_delimiter', ',');
+        $enclosure = apply_filters('wpunewsletter__export_enclosure', '"');
+        $add_headers = apply_filters('wpunewsletter__export_add_headers', false);
+
         // Send CSV Headers
         $handle = @fopen('php://output', 'w');
         header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
@@ -1222,15 +1226,17 @@ class WPUNewsletter {
         header("Pragma: public");
 
         // Export as CSV lines
-        foreach ($results as $data) {
+        foreach ($results as $i => $data) {
             $csv_data = $data;
             $extra = (array) json_decode($data['extra']);
             unset($csv_data['extra']);
             foreach ($this->extra_fields as $id => $field) {
                 $csv_data[$id] = isset($extra[$id]) ? $extra[$id] : '';
             }
-
-            fputcsv($handle, $csv_data);
+            if ($i == 0 && $add_headers) {
+                fputcsv($handle, array_keys($csv_data), $delimiter, $enclosure);
+            }
+            fputcsv($handle, $csv_data, $delimiter, $enclosure);
         }
 
         // Send CSV File
