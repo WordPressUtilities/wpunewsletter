@@ -3,7 +3,7 @@
 /*
 Plugin Name: WP Utilities Newsletter
 Description: Allow subscriptions to a newsletter.
-Version: 2.0.1
+Version: 2.0.2
 Author: Darklg
 Author URI: http://darklg.me/
 License: MIT License
@@ -840,7 +840,7 @@ class WPUNewsletter {
             die;
         }
 
-        if ($has_gdpr_checkbox && !isset($_POST['wpunewsletter_gprdcheckbox']) || !$_POST['wpunewsletter_gprdcheckbox']) {
+        if ($has_gdpr_checkbox && (!isset($_POST['wpunewsletter_gprdcheckbox']) || !$_POST['wpunewsletter_gprdcheckbox'])) {
             $this->display_error_messages(apply_filters('wpunewsletter_gdpr_not_checked', '<span class="error">' . __("You need to accept the conditions.", 'wpunewsletter') . '</span>'));
             die;
         }
