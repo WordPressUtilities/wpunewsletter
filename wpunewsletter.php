@@ -3,7 +3,7 @@
 /*
 Plugin Name: WP Utilities Newsletter
 Description: Allow subscriptions to a newsletter.
-Version: 2.0.0
+Version: 2.0.1
 Author: Darklg
 Author URI: http://darklg.me/
 License: MIT License
@@ -94,6 +94,9 @@ class WPUNewsletter {
             'load_translation'
         ));
         add_action('plugins_loaded', array(&$this,
+            'load_dependencies'
+        ));
+        add_action('plugins_loaded', array(&$this,
             'plugins_loaded'
         ));
         add_action('init', array(&$this,
@@ -159,17 +162,24 @@ class WPUNewsletter {
         ));
     }
 
-    public function plugins_loaded() {
+    public function load_dependencies() {
 
         // Handle database
         require_once dirname(__FILE__) . '/inc/WPUBaseAdminDatas/WPUBaseAdminDatas.php';
-        $this->baseadmindatas = new \wpunewsletter\WPUBaseAdminDatas();
+        if (!property_exists($this, 'baseadmindatas')) {
+            $this->baseadmindatas = new \wpunewsletter\WPUBaseAdminDatas();
+        }
 
         require_once dirname(__FILE__) . '/inc/WPUBaseUpdate/WPUBaseUpdate.php';
-        $this->settings_update = new \wpunewsletter\WPUBaseUpdate(
-            'WordPressUtilities',
-            'wpunewsletter',
-            $this->plugin_version);
+        if (!property_exists($this, 'settings_update')) {
+            $this->settings_update = new \wpunewsletter\WPUBaseUpdate(
+                'WordPressUtilities',
+                'wpunewsletter',
+                $this->plugin_version);
+        }
+    }
+
+    public function plugins_loaded() {
 
         /* Check activation */
         if ($this->plugin_version != $this->db_version) {
@@ -772,10 +782,10 @@ class WPUNewsletter {
             return false;
         }
 
-        if(!is_array($extra_args)){
+        if (!is_array($extra_args)) {
             $extra_args = array();
         }
-        if(!isset($extra_args['gprd_checkbox'])){
+        if (!isset($extra_args['gprd_checkbox'])) {
             $extra_args['gprd_checkbox'] = 0;
         }
 
@@ -852,7 +862,7 @@ class WPUNewsletter {
         } else {
             $extra = $this->get_extras_from($_POST);
             $extra_args = array();
-            if($has_gdpr_checkbox){
+            if ($has_gdpr_checkbox) {
                 $extra_args['gprd_checkbox'] = 1;
             }
             if ($extra !== false) {
@@ -1182,6 +1192,9 @@ class WPUNewsletter {
     }
 
     public function wpunewsletter_activate_db() {
+
+        $this->load_dependencies();
+
         // DB Version
         update_option('wpunewsletter_db_version', $this->plugin_version);
 
@@ -1340,7 +1353,7 @@ class WPUNewsletter {
     }
 }
 
-include dirname( __FILE__ ) . '/inc/widget.php';
+include dirname(__FILE__) . '/inc/widget.php';
 
 /* ----------------------------------------------------------
   Launch
