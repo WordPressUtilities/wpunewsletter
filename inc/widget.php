@@ -68,6 +68,9 @@ class wpunewsletter_form extends WP_Widget {
         $widg_content_label = apply_filters('wpunewsletter_form_widget_content_label', $curr_instance['content_label'], $instance);
         $widg_content_placeholder = apply_filters('wpunewsletter_form_widget_content_placeholder', $curr_instance['content_placeholder'], $instance);
         $widg_content_button = apply_filters('wpunewsletter_form_widget_content_button', $curr_instance['content_button'], $instance);
+        if ($widg_content_button == $curr_instance['content_button']) {
+            $widg_content_button = '<span>' . $widg_content_button . '</span>';
+        }
 
         /* Display */
         $widg_form_has_wrapper = apply_filters('wpunewsletter_form_widget_form_has_wrapper', $curr_instance['form_has_wrapper'], $instance);
