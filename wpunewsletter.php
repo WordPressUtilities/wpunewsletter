@@ -2,12 +2,14 @@
 
 /*
 Plugin Name: WP Utilities Newsletter
+Plugin URI: https://github.com/WordPressUtilities/wpunewsletter
+Update URI: https://github.com/WordPressUtilities/wpunewsletter
 Description: Allow subscriptions to a newsletter.
-Version: 2.0.3
+Version: 2.1.0
 Author: Darklg
-Author URI: http://darklg.me/
+Author URI: https://darklg.me/
 License: MIT License
-License URI: http://opensource.org/licenses/MIT
+License URI: https://opensource.org/licenses/MIT
 */
 
 /*
@@ -26,7 +28,7 @@ License URI: http://opensource.org/licenses/MIT
 $wpunewsletter_messages = array();
 
 class WPUNewsletter {
-    public $plugin_version = '2.0.3';
+    public $plugin_version = '2.1.0';
     public $table_name;
     public $extra_fields;
     public $custom_queries;
@@ -723,6 +725,19 @@ class WPUNewsletter {
             'list_id' => $list_id
         ));
 
+        $all_lists = $Mailchimp_Lists->getList(array());
+        $lists = array();
+        if (is_array($all_lists['data'])) {
+            foreach ($all_lists['data'] as $list) {
+                $lists[$list['id']] = array(
+                    'hash' => md5($list['id']),
+                    'web_id' => $list['web_id'],
+                    'name' => $list['name']
+                );
+            }
+            update_option('wpunewsletter__mailchimp__lists', $lists, 'no');
+        }
+
         return (isset($subscriber['data'], $subscriber['data'][0], $subscriber['data'][0]['id']) && $subscriber['data'][0]['id'] == $list_id);
     }
 
@@ -738,9 +753,12 @@ class WPUNewsletter {
         $Mailchimp = new Mailchimp($api_key);
         $Mailchimp_Lists = new Mailchimp_Lists($Mailchimp);
 
+        $all_lists = get_option('wpunewsletter__mailchimp__lists');
+        $list_id = apply_filters('wpunewsletter_mailchimp_listid__before_submit', $list_id, $all_lists);
+
         $subscriber = $Mailchimp_Lists->subscribe($list_id, array(
             'email' => htmlentities($email_vars['email'])
-        ), null, 'html', $double_optin);
+        ), null, 'html', $double_optin, true);
 
         $is_subscribed = !empty($subscriber['leid']);
     }
@@ -982,6 +1000,26 @@ class WPUNewsletter {
         return $html;
     }
 
+    public function form_item__select($id, $name, $values = array()) {
+        $current_val = get_option($id);
+        $html = '<p>';
+        $html .= '<strong><label for="' . $id . '">' . $name . '</label></strong><br />';
+        $html .= '<select id="' . $id . '" name="' . $id . '"">';
+        foreach ($values as $id => $value) {
+            $val_text = '';
+            if (is_string($value)) {
+                $val_text = $value;
+            }
+            if (is_array($value) && isset($value['name'])) {
+                $val_text = $id . ' - ' . $value['name'];
+            }
+            $html .= '<option ' . ($current_val == $id ? 'selected' : '') . ' value="' . $id . '">' . esc_html($val_text) . '</option>';
+        }
+        $html .= '</select>';
+        $html .= '</p>';
+        return $html;
+    }
+
     public function form_item__editor($id, $name, $settings = array()) {
         $html = '<p>';
         $html .= '<strong><label for="' . $id . '">' . $name . '</label></strong><br />';
@@ -1022,8 +1060,14 @@ class WPUNewsletter {
         $_mailchimpIsOpen = (get_option('wpunewsletter_mailchimp_active') == '1');
         echo '<div id="wpunewsletter-mailchimp-detail" style="' . ($_mailchimpIsOpen ? '' : 'display: none;') . '">';
         echo $this->form_item__checkbox('wpunewsletter_mailchimp_double_optin', __('Use double optin', 'wpunewsletter'));
+        echo '<p>' . sprintf(__('Find your <a target="_blank" href="%s">API Key here</a>.', 'wpunewsletter'), 'https://admin.mailchimp.com/account/api/') . '</p>';
         echo $this->form_item__text('wpunewsletter_mailchimp_apikey', __('API Key', 'wpunewsletter'));
-        echo $this->form_item__text('wpunewsletter_mailchimp_listid', __('List ID', 'wpunewsletter'));
+        $lists = get_option('wpunewsletter__mailchimp__lists');
+        if (is_array($lists)) {
+            echo $this->form_item__select('wpunewsletter_mailchimp_listid', __('List ID', 'wpunewsletter'), $lists);
+        } else {
+            echo $this->form_item__text('wpunewsletter_mailchimp_listid', __('List ID', 'wpunewsletter'));
+        }
         echo '</div>';
 
         echo '<hr />';

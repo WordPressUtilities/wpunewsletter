@@ -18,8 +18,8 @@ jQuery(document).ready(function($) {
 /* <3 https://codereview.stackexchange.com/a/192241 */
 function wpunewsletter_rot13(str) {
     return (str + '').replace(/[a-zA-Z]/gi, function(s) {
-        return String.fromCharCode(s.charCodeAt(0) + (s.toLowerCase() < 'n' ? 13 : -13))
-    })
+        return String.fromCharCode(s.charCodeAt(0) + (s.toLowerCase() < 'n' ? 13 : -13));
+    });
 }
 
 function wpunewsletter_set_form_events() {
@@ -37,8 +37,8 @@ function wpunewsletter_set_form_events() {
     }
     $form.on('submit', function(e) {
         e.preventDefault();
-        if (jsSettings && jsSettings['js_callback_before_submit']) {
-            if (!window[jsSettings['js_callback_before_submit']]($form, $messages)) {
+        if (jsSettings && jsSettings.js_callback_before_submit) {
+            if (!window[jsSettings.js_callback_before_submit]($form, $messages)) {
                 return false;
             }
         }
