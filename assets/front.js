@@ -1,7 +1,8 @@
 jQuery(document).ready(function($) {
+    'use strict';
 
     /* Form submit */
-    $('form.wpunewsletter-form').each(wpunewsletter_set_form_events);
+    jQuery('form.wpunewsletter-form').each(wpunewsletter_set_form_events);
 
     /* Email validation */
     jQuery('[name="wpunewsletter_email"]').each(function() {
@@ -17,13 +18,15 @@ jQuery(document).ready(function($) {
 
 /* <3 https://codereview.stackexchange.com/a/192241 */
 function wpunewsletter_rot13(str) {
+    'use strict';
     return (str + '').replace(/[a-zA-Z]/gi, function(s) {
         return String.fromCharCode(s.charCodeAt(0) + (s.toLowerCase() < 'n' ? 13 : -13));
     });
 }
 
 function wpunewsletter_set_form_events() {
-    $form = jQuery(this);
+    'use strict';
+    var $form = jQuery(this);
     var $messages = $form.find('.messages'),
         $button = $form.find('button[type="submit"]');
     if (!$messages.length) {

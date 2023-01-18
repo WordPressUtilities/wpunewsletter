@@ -5,7 +5,7 @@ Plugin Name: WP Utilities Newsletter
 Plugin URI: https://github.com/WordPressUtilities/wpunewsletter
 Update URI: https://github.com/WordPressUtilities/wpunewsletter
 Description: Allow subscriptions to a newsletter.
-Version: 2.1.0
+Version: 2.2.0
 Author: Darklg
 Author URI: https://darklg.me/
 License: MIT License
@@ -28,7 +28,7 @@ License URI: https://opensource.org/licenses/MIT
 $wpunewsletter_messages = array();
 
 class WPUNewsletter {
-    public $plugin_version = '2.1.0';
+    public $plugin_version = '2.2.0';
     public $table_name;
     public $extra_fields;
     public $custom_queries;
@@ -152,7 +152,7 @@ class WPUNewsletter {
         // Mailchimp
         add_action('wpunewsletter_mail_registered', array(&$this,
             'mailchimp_register'
-        ), 10, 1);
+        ), 10, 2);
 
         if (isset($_GET['page']) && (strpos($_GET['page'], 'wpunewsletter') !== false)) {
             add_action('admin_enqueue_scripts', array(&$this,
@@ -730,22 +730,20 @@ class WPUNewsletter {
         if (is_array($all_lists['data'])) {
             foreach ($all_lists['data'] as $list) {
                 $lists[$list['id']] = array(
-                    'hash' => md5($list['id']),
                     'web_id' => $list['web_id'],
                     'name' => $list['name']
                 );
             }
-            update_option('wpunewsletter__mailchimp__lists', $lists, 'no');
+            update_option('wpunewsletter__mailchimp__lists', $lists, 'yes');
         }
 
         return (isset($subscriber['data'], $subscriber['data'][0], $subscriber['data'][0]['id']) && $subscriber['data'][0]['id'] == $list_id);
     }
 
-    public function mailchimp_register($email_vars) {
+    public function mailchimp_register($email_vars, $email_args = array()) {
         if (!$this->mailchimp_load()) {
             return false;
         }
-
         $api_key = get_option('wpunewsletter_mailchimp_apikey');
         $list_id = get_option('wpunewsletter_mailchimp_listid');
         $double_optin = (get_option('wpunewsletter_mailchimp_double_optin') == '1');
@@ -755,6 +753,15 @@ class WPUNewsletter {
 
         $all_lists = get_option('wpunewsletter__mailchimp__lists');
         $list_id = apply_filters('wpunewsletter_mailchimp_listid__before_submit', $list_id, $all_lists);
+
+        /* If a list is specified, override the default list choice */
+        if (is_array($all_lists) && isset($email_args['mclist_id']) && $email_args['mclist_id']) {
+            foreach ($all_lists as $all_lists_item_id => $list_details) {
+                if (md5('wpu_' . $all_lists_item_id) == $email_args['mclist_id']) {
+                    $list_id = $all_lists_item_id;
+                }
+            }
+        }
 
         $subscriber = $Mailchimp_Lists->subscribe($list_id, array(
             'email' => htmlentities($email_vars['email'])
@@ -830,7 +837,7 @@ class WPUNewsletter {
         wp_cache_delete($this->dash_cache_id);
 
         if ($insert !== false) {
-            do_action('wpunewsletter_mail_registered', $email_vars);
+            do_action('wpunewsletter_mail_registered', $email_vars, $extra_args);
         }
 
         if ($send_confirmation_mail && $insert !== false) {
@@ -882,6 +889,9 @@ class WPUNewsletter {
             $extra_args = array();
             if ($has_gdpr_checkbox) {
                 $extra_args['gprd_checkbox'] = 1;
+            }
+            if (isset($_POST['wpunewsletter_mclist_id'])) {
+                $extra_args['mclist_id'] = esc_html($_POST['wpunewsletter_mclist_id']);
             }
             if ($extra !== false) {
                 $subscription = $this->register_mail($_POST['wpunewsletter_email'], $send_confirmation_mail, $check_subscription, $extra, $extra_args);

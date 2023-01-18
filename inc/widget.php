@@ -38,6 +38,7 @@ class wpunewsletter_form extends WP_Widget {
             'content_label' => __('Email', 'wpunewsletter'),
             'content_placeholder' => __('Your email address', 'wpunewsletter'),
             'content_button' => __('Register', 'wpunewsletter'),
+            'mailchimp_list_id' => '',
             'form_has_wrapper' => true,
             'fields_has_wrapper' => true,
             'messages_over_form' => true,
@@ -116,6 +117,9 @@ class wpunewsletter_form extends WP_Widget {
         $main_newsletter_field .= '<label class="' . $widg_classes_label . '" for="' . $fields_prefix . 'wpunewsletter_email">' . $widg_content_label . '</label>';
         $main_newsletter_field .= '<input class="' . $widg_classes_mainfield . '" type="email" name="wpunewsletter_email" placeholder="' . $widg_content_placeholder . '" id="' . $fields_prefix . 'wpunewsletter_email" value="" required />';
         $main_newsletter_field .= '<input type="hidden" name="wpunewsletter_email_hid" id="' . $fields_prefix . 'wpunewsletter_email_hid" />';
+        if (isset($instance['mailchimp_list_id']) && $instance['mailchimp_list_id']) {
+            $main_newsletter_field .= '<input type="hidden" name="wpunewsletter_mclist_id" value="' . md5('wpu_' . $instance['mailchimp_list_id']) . '" />';
+        }
         $main_newsletter_field .= ($widg_main_field_have_wrapper && $widg_fields_has_wrapper) ? '</p>' : '';
         $main_newsletter_field .= apply_filters('wpunewsletter__after_main_field', '', $instance);
 
