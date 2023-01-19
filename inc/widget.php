@@ -125,8 +125,8 @@ class wpunewsletter_form extends WP_Widget {
 
         if ($widg_gprdcheckbox_box && $widg_gprdcheckbox_text) {
             $main_newsletter_field .= '<div class="wpunewsletter-gprdcheckbox__wrapper">';
-            $main_newsletter_field .= '<input required type="checkbox" id="wpunewsletter_gprdcheckbox" name="wpunewsletter_gprdcheckbox" value="1" />';
-            $main_newsletter_field .= '<label for="wpunewsletter_gprdcheckbox">' . $widg_gprdcheckbox_text . '</label>';
+            $main_newsletter_field .= '<input required type="checkbox" id="' . $fields_prefix . 'wpunewsletter_gprdcheckbox" name="wpunewsletter_gprdcheckbox" value="1" />';
+            $main_newsletter_field .= '<label for="' . $fields_prefix . 'wpunewsletter_gprdcheckbox">' . $widg_gprdcheckbox_text . '</label>';
             $main_newsletter_field .= '</div>';
         }
 
