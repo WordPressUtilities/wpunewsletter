@@ -5,7 +5,7 @@ Plugin Name: WP Utilities Newsletter
 Plugin URI: https://github.com/WordPressUtilities/wpunewsletter
 Update URI: https://github.com/WordPressUtilities/wpunewsletter
 Description: Allow subscriptions to a newsletter.
-Version: 2.2.1
+Version: 2.3.0
 Author: Darklg
 Author URI: https://darklg.me/
 License: MIT License
@@ -28,7 +28,7 @@ License URI: https://opensource.org/licenses/MIT
 $wpunewsletter_messages = array();
 
 class WPUNewsletter {
-    public $plugin_version = '2.2.1';
+    public $plugin_version = '2.3.0';
     public $table_name;
     public $extra_fields;
     public $custom_queries;
@@ -720,22 +720,33 @@ class WPUNewsletter {
         $Mailchimp = new Mailchimp($api_key);
         $Mailchimp_Lists = new Mailchimp_Lists($Mailchimp);
 
-        $subscriber = $Mailchimp_Lists->getList(array(
-            'exact' => 1,
-            'list_id' => $list_id
-        ));
-
         $all_lists = $Mailchimp_Lists->getList(array());
         $lists = array();
         if (is_array($all_lists['data'])) {
             foreach ($all_lists['data'] as $list) {
+                $merge_vars = $Mailchimp_Lists->mergeVars(array($list['id']));
+                $has_required_fields = false;
+                if (is_array($merge_vars)) {
+                    foreach ($merge_vars['data'][0]['merge_vars'] as $var) {
+                        if ($var['field_type'] != 'email' && $var['req']) {
+                            $has_required_fields = true;
+                            break;
+                        }
+                    }
+                }
                 $lists[$list['id']] = array(
+                    'req' => $has_required_fields,
                     'web_id' => $list['web_id'],
                     'name' => $list['name']
                 );
             }
             update_option('wpunewsletter__mailchimp__lists', $lists, 'yes');
         }
+
+        $subscriber = $Mailchimp_Lists->getList(array(
+            'exact' => 1,
+            'list_id' => $list_id
+        ));
 
         return (isset($subscriber['data'], $subscriber['data'][0], $subscriber['data'][0]['id']) && $subscriber['data'][0]['id'] == $list_id);
     }
@@ -1012,9 +1023,11 @@ class WPUNewsletter {
 
     public function form_item__select($id, $name, $values = array()) {
         $current_val = get_option($id);
+
         $html = '<p>';
         $html .= '<strong><label for="' . $id . '">' . $name . '</label></strong><br />';
-        $html .= '<select id="' . $id . '" name="' . $id . '"">';
+        $html .= '<select id="' . $id . '" name="' . $id . '">';
+        $has_warning = false;
         foreach ($values as $id => $value) {
             $val_text = '';
             if (is_string($value)) {
@@ -1023,9 +1036,16 @@ class WPUNewsletter {
             if (is_array($value) && isset($value['name'])) {
                 $val_text = $id . ' - ' . $value['name'];
             }
+            if (isset($value['req']) && $value['req']) {
+                $has_warning = true;
+                $val_text .= ' - ' . __('Required fields', 'wpunewsletter');
+            }
             $html .= '<option ' . ($current_val == $id ? 'selected' : '') . ' value="' . $id . '">' . esc_html($val_text) . '</option>';
         }
         $html .= '</select>';
+        if ($has_warning) {
+            $html .= '<small style="display:block">' . __('Forms with only an email address will not work on a list with required fields.', 'wpunewsletter') . '</small>';
+        }
         $html .= '</p>';
         return $html;
     }
