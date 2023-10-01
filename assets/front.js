@@ -1,4 +1,4 @@
-jQuery(document).ready(function($) {
+jQuery(document).ready(function() {
     'use strict';
 
     /* Form submit */
@@ -9,7 +9,7 @@ jQuery(document).ready(function($) {
         var $this = jQuery(this),
             $hid = $this.parent().find('[name="wpunewsletter_email_hid"]');
 
-        $this.on('change keydown keyup focus blur', function(e) {
+        $this.on('change keydown keyup focus blur', function() {
             $hid.val(wpunewsletter_rot13($this.val()));
         });
     });
@@ -57,10 +57,10 @@ function wpunewsletter_set_form_events() {
                 $form.attr('data-ajaxloading', '0');
                 $button.removeAttr('disabled');
                 $messages.append(jQuery(data.responseText));
-                if (data.responseText.indexOf('\"error\"') > -1) {
+                if (data.responseText.indexOf('"error"') > -1) {
                     $form.attr('data-status', 'error');
                 }
-                if (data.responseText.indexOf('\"success\"') > -1) {
+                if (data.responseText.indexOf('"success"') > -1) {
                     $form.attr('data-status', 'success');
                 }
                 $form.trigger('wpunewsletter_form_ajaxcomplete');

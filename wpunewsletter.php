@@ -5,9 +5,13 @@ Plugin Name: WP Utilities Newsletter
 Plugin URI: https://github.com/WordPressUtilities/wpunewsletter
 Update URI: https://github.com/WordPressUtilities/wpunewsletter
 Description: Allow subscriptions to a newsletter.
-Version: 2.3.0
+Version: 2.4.0
 Author: Darklg
 Author URI: https://darklg.me/
+Text Domain: wpunewsletter
+Domain Path: /lang
+Requires at least: 6.0
+Requires PHP: 8.0
 License: MIT License
 License URI: https://opensource.org/licenses/MIT
 */
@@ -28,12 +32,23 @@ License URI: https://opensource.org/licenses/MIT
 $wpunewsletter_messages = array();
 
 class WPUNewsletter {
-    public $plugin_version = '2.3.0';
-    public $table_name;
-    public $extra_fields;
-    public $custom_queries;
     public $admin_messages = array();
+    public $baseadmindatas;
+    public $custom_queries;
     public $dash_cache_id = 'wpunewsletter_dashboard_widget_subscribers';
+    public $db_version;
+    public $extra_fields;
+    public $min_admin_level;
+    public $nb_years_autodelete;
+    public $perpage;
+    public $plugin_description;
+    public $plugin_dir;
+    public $plugin_id;
+    public $plugin_url;
+    public $plugin_version = '2.4.0';
+    public $settings_update;
+    public $table_name;
+    public $table_name_raw;
 
     private $table_fields = array(
         'id' => array(
@@ -198,7 +213,11 @@ class WPUNewsletter {
 
     // Translation
     public function load_translation() {
-        load_plugin_textdomain('wpunewsletter', false, $this->plugin_dir . 'lang/');
+        $lang_dir = dirname(plugin_basename(__FILE__)) . '/lang/';
+        if (!load_plugin_textdomain('wpunewsletter', false, $lang_dir)) {
+            load_muplugin_textdomain('wpunewsletter', $lang_dir);
+        }
+        $this->plugin_description = __('Allow subscriptions to a newsletter.', 'wpunewsletter');
     }
 
     public function load_values() {
@@ -1427,7 +1446,7 @@ class WPUNewsletter {
     }
 }
 
-include dirname(__FILE__) . '/inc/widget.php';
+require_once dirname(__FILE__) . '/inc/widget.php';
 
 /* ----------------------------------------------------------
   Launch
