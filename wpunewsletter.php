@@ -5,7 +5,7 @@ Plugin Name: WP Utilities Newsletter
 Plugin URI: https://github.com/WordPressUtilities/wpunewsletter
 Update URI: https://github.com/WordPressUtilities/wpunewsletter
 Description: Allow subscriptions to a newsletter.
-Version: 2.4.0
+Version: 2.4.1
 Author: Darklg
 Author URI: https://darklg.me/
 Text Domain: wpunewsletter
@@ -45,7 +45,7 @@ class WPUNewsletter {
     public $plugin_dir;
     public $plugin_id;
     public $plugin_url;
-    public $plugin_version = '2.4.0';
+    public $plugin_version = '2.4.1';
     public $settings_update;
     public $table_name;
     public $table_name_raw;
@@ -183,12 +183,12 @@ class WPUNewsletter {
 
         // Handle database
         require_once dirname(__FILE__) . '/inc/WPUBaseAdminDatas/WPUBaseAdminDatas.php';
-        if (!property_exists($this, 'baseadmindatas')) {
+        if (!property_exists($this, 'baseadmindatas') || !$this->baseadmindatas) {
             $this->baseadmindatas = new \wpunewsletter\WPUBaseAdminDatas();
         }
 
         require_once dirname(__FILE__) . '/inc/WPUBaseUpdate/WPUBaseUpdate.php';
-        if (!property_exists($this, 'settings_update')) {
+        if (!property_exists($this, 'settings_update') || !$this->settings_update) {
             $this->settings_update = new \wpunewsletter\WPUBaseUpdate(
                 'WordPressUtilities',
                 'wpunewsletter',
