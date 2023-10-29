@@ -5,7 +5,7 @@ Plugin Name: WP Utilities Newsletter
 Plugin URI: https://github.com/WordPressUtilities/wpunewsletter
 Update URI: https://github.com/WordPressUtilities/wpunewsletter
 Description: Allow subscriptions to a newsletter.
-Version: 2.4.1
+Version: 2.4.2
 Author: Darklg
 Author URI: https://darklg.me/
 Text Domain: wpunewsletter

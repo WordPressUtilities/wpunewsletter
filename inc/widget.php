@@ -115,7 +115,7 @@ class wpunewsletter_form extends WP_Widget {
         $main_newsletter_field .= apply_filters('wpunewsletter__before_main_field', '', $instance);
         $main_newsletter_field .= ($widg_main_field_have_wrapper && $widg_fields_has_wrapper) ? '<p class="' . $widg_classes_fieldwrapper . '">' : '';
         $main_newsletter_field .= '<label class="' . $widg_classes_label . '" for="' . $fields_prefix . 'wpunewsletter_email">' . $widg_content_label . '</label>';
-        $main_newsletter_field .= '<input class="' . $widg_classes_mainfield . '" type="email" name="wpunewsletter_email" placeholder="' . $widg_content_placeholder . '" id="' . $fields_prefix . 'wpunewsletter_email" value="" required />';
+        $main_newsletter_field .= '<input class="' . $widg_classes_mainfield . '" type="email" name="wpunewsletter_email" placeholder="' . $widg_content_placeholder . '" id="' . $fields_prefix . 'wpunewsletter_email" value="" ' . (is_admin() ? '' : 'required') . ' />';
         $main_newsletter_field .= '<input type="hidden" name="wpunewsletter_email_hid" id="' . $fields_prefix . 'wpunewsletter_email_hid" />';
         if (isset($instance['mailchimp_list_id']) && $instance['mailchimp_list_id']) {
             $main_newsletter_field .= '<input type="hidden" name="wpunewsletter_mclist_id" value="' . md5('wpu_' . $instance['mailchimp_list_id']) . '" />';
@@ -125,12 +125,12 @@ class wpunewsletter_form extends WP_Widget {
 
         if ($widg_gprdcheckbox_box && $widg_gprdcheckbox_text) {
             $main_newsletter_field .= '<div class="wpunewsletter-gprdcheckbox__wrapper">';
-            $main_newsletter_field .= '<input required type="checkbox" id="' . $fields_prefix . 'wpunewsletter_gprdcheckbox" name="wpunewsletter_gprdcheckbox" value="1" />';
+            $main_newsletter_field .= '<input ' . (is_admin() ? '' : 'required') . ' type="checkbox" id="' . $fields_prefix . 'wpunewsletter_gprdcheckbox" name="wpunewsletter_gprdcheckbox" value="1" />';
             $main_newsletter_field .= '<label for="' . $fields_prefix . 'wpunewsletter_gprdcheckbox">' . $widg_gprdcheckbox_text . '</label>';
             $main_newsletter_field .= '</div>';
         }
 
-        if ($main_newsletter_field == 'before') {
+        if ($widg_main_field_position == 'before') {
             $default_widget_content .= $main_newsletter_field;
         }
 
@@ -159,7 +159,7 @@ class wpunewsletter_form extends WP_Widget {
 
             switch ($field['type']) {
             case 'checkbox':
-                $default_widget_content .= $_label_before . '<input class="' . $field['field_classname'] . ' " type="checkbox" ' . $_idname . ' ' . ($field_value == '1' ? 'checked="checked"' : '') . ' value="1" /> ' . '<span>' . $field_name . '</span>' . $_label_after;
+                $default_widget_content .= $_label_before . '<input class="' . $field['field_classname'] . ' " type="checkbox" ' . $_idname . ' ' . ($field_value == '1' ? 'checked="checked"' : '') . ' value="1" /> ' . '<span class="label-main">' . $field_name . '</span>' . $_label_after;
                 break;
             default:
 
@@ -169,7 +169,7 @@ class wpunewsletter_form extends WP_Widget {
             $default_widget_content .= $widg_fields_has_wrapper ? '</p>' : '';
         }
 
-        if ($main_newsletter_field != 'before') {
+        if ($widg_main_field_position != 'before') {
             $default_widget_content .= $main_newsletter_field;
         }
 
