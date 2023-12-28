@@ -16,17 +16,25 @@ class wpunewsletter_form extends WP_Widget {
         ));
     }
     public function form($instance) {
-        $title = !empty($instance['title']) ? $instance['title'] : esc_html__('New title', 'text_domain');
+        $title = !empty($instance['title']) ? $instance['title'] : esc_html__('New title', 'wpunewsletter');
         ?>
         <p>
-        <label for="<?php echo esc_attr($this->get_field_id('title')); ?>"><?php esc_attr_e('Title:', 'text_domain');?></label>
+        <label for="<?php echo esc_attr($this->get_field_id('title')); ?>"><?php esc_attr_e('Title:', 'wpunewsletter');?></label>
         <input class="widefat" id="<?php echo esc_attr($this->get_field_id('title')); ?>" name="<?php echo esc_attr($this->get_field_name('title')); ?>" type="text" value="<?php echo esc_attr($title); ?>">
+        </p>
+        <?php
+$text = !empty($instance['text']) ? $instance['text'] : '';
+        ?>
+        <p>
+        <label for="<?php echo esc_attr($this->get_field_id('text')); ?>"><?php esc_attr_e('Texte:', 'wpunewsletter');?></label>
+        <input class="widefat" id="<?php echo esc_attr($this->get_field_id('text')); ?>" name="<?php echo esc_attr($this->get_field_name('text')); ?>" type="text" value="<?php echo esc_attr($text); ?>">
         </p>
         <?php
 }
     public function update($new_instance, $old_instance) {
         $instance = array();
         $instance['title'] = (!empty($new_instance['title'])) ? strip_tags($new_instance['title']) : '';
+        $instance['text'] = (!empty($new_instance['text'])) ? strip_tags($new_instance['text']) : '';
 
         return $instance;
     }
@@ -50,6 +58,7 @@ class wpunewsletter_form extends WP_Widget {
             'gprdtext' => get_option('wpunewsletter_gprdtext'),
             'gprdcheckbox_text' => get_option('wpunewsletter_gprdcheckbox_text'),
             'gprdcheckbox_box' => get_option('wpunewsletter_gprdcheckbox_box'),
+            'text' => '',
             'classes_mainfield' => '',
             'classes_fieldwrapper' => 'field',
             'classes_form' => 'newsletter-form',
@@ -82,6 +91,9 @@ class wpunewsletter_form extends WP_Widget {
         $widg_extra_fields_values = apply_filters('wpunewsletter_form_widget_extra_fields_values', $curr_instance['extra_fields_values'], $instance);
         $widg_main_field_position = apply_filters('wpunewsletter_form_widget_main_field_position', $curr_instance['main_field_position'], $instance);
 
+        /* Text */
+        $widg_text = trim(apply_filters('wpunewsletter_form_widget_text', $curr_instance['text'], $instance));
+
         /* GPRD */
         $widg_gprdtext = trim(apply_filters('wpunewsletter_form_widget_gprdtext', $curr_instance['gprdtext'], $instance));
         $widg_gprdcheckbox_box = trim(apply_filters('wpunewsletter_form_widget_gprdcheckbox_box', $curr_instance['gprdcheckbox_box'], $instance));
@@ -105,6 +117,9 @@ class wpunewsletter_form extends WP_Widget {
         $default_widget_content = '<form class="wpunewsletter-form ' . $widg_classes_form . '" id="' . $widg_form_id . '" action="" method="post">';
         $default_widget_content .= '<script>if(!window.wpunewsletter_forms){window.wpunewsletter_forms=[];}</script>';
         $default_widget_content .= '<script>window.wpunewsletter_forms[\'' . $widg_form_id . '\']=' . json_encode($js_form_settings) . ';</script>';
+
+        $default_widget_content .= $widg_text ? '<div class="wpunewsletter-form__text">' . wpautop(esc_html($widg_text)) . '</div>' : '';
+
         if ($widg_messages_over_form) {
             $default_widget_content .= '<div class="messages" aria-live="polite"></div>';
         }
@@ -139,6 +154,9 @@ class wpunewsletter_form extends WP_Widget {
             $_idname = ' name="' . $_f_id . '" id="' . $fields_prefix . $_f_id . '" ';
             if ($field['required']) {
                 $_idname .= ' required="required" ';
+            }
+            if ($field['placeholder']) {
+                $_idname .= ' placeholder="' . esc_attr($field['placeholder']) . '" ';
             }
             $field_value = $field['default_value'];
             if (is_array($widg_extra_fields_values) && isset($widg_extra_fields_values[$id])) {

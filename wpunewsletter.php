@@ -5,7 +5,7 @@ Plugin Name: WP Utilities Newsletter
 Plugin URI: https://github.com/WordPressUtilities/wpunewsletter
 Update URI: https://github.com/WordPressUtilities/wpunewsletter
 Description: Allow subscriptions to a newsletter.
-Version: 2.4.2
+Version: 2.5.0
 Author: Darklg
 Author URI: https://darklg.me/
 Text Domain: wpunewsletter
@@ -45,7 +45,7 @@ class WPUNewsletter {
     public $plugin_dir;
     public $plugin_id;
     public $plugin_url;
-    public $plugin_version = '2.4.1';
+    public $plugin_version = '2.5.0';
     public $settings_update;
     public $table_name;
     public $table_name_raw;
@@ -241,6 +241,7 @@ class WPUNewsletter {
 
             $required = (isset($_f['required']) && $_f['required']);
             $name = isset($_f['name']) ? ucfirst(esc_html($_f['name'])) : $id;
+            $placeholder = isset($_f['placeholder']) ? esc_html($_f['placeholder']) : '';
             $default_value = isset($_f['default_value']) ? esc_html($_f['default_value']) : '';
             $label_check = isset($_f['label_check']) ? esc_html($_f['label_check']) : $name;
             $field_classname = isset($_f['field_classname']) ? esc_html($_f['field_classname']) : '';
@@ -252,6 +253,7 @@ class WPUNewsletter {
             $this->extra_fields[$id] = array(
                 'required' => $required,
                 'name' => $name,
+                'placeholder' => $placeholder,
                 'default_value' => $default_value,
                 'label_check' => $label_check,
                 'field_classname' => $field_classname,
