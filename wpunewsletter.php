@@ -5,16 +5,17 @@ Plugin Name: WP Utilities Newsletter
 Plugin URI: https://github.com/WordPressUtilities/wpunewsletter
 Update URI: https://github.com/WordPressUtilities/wpunewsletter
 Description: Allow subscriptions to a newsletter.
-Version: 2.5.0
+Version: 2.5.1
 Author: Darklg
 Author URI: https://darklg.me/
 Text Domain: wpunewsletter
 Domain Path: /lang
-Requires at least: 6.0
+Requires at least: 6.2
 Requires PHP: 8.0
 License: MIT License
 License URI: https://opensource.org/licenses/MIT
 */
+defined('ABSPATH') || die;
 
 /*
  * To test :
@@ -45,7 +46,7 @@ class WPUNewsletter {
     public $plugin_dir;
     public $plugin_id;
     public $plugin_url;
-    public $plugin_version = '2.5.0';
+    public $plugin_version = '2.5.1';
     public $settings_update;
     public $table_name;
     public $table_name_raw;
@@ -182,12 +183,12 @@ class WPUNewsletter {
     public function load_dependencies() {
 
         // Handle database
-        require_once dirname(__FILE__) . '/inc/WPUBaseAdminDatas/WPUBaseAdminDatas.php';
+        require_once __DIR__ . '/inc/WPUBaseAdminDatas/WPUBaseAdminDatas.php';
         if (!property_exists($this, 'baseadmindatas') || !$this->baseadmindatas) {
             $this->baseadmindatas = new \wpunewsletter\WPUBaseAdminDatas();
         }
 
-        require_once dirname(__FILE__) . '/inc/WPUBaseUpdate/WPUBaseUpdate.php';
+        require_once __DIR__ . '/inc/WPUBaseUpdate/WPUBaseUpdate.php';
         if (!property_exists($this, 'settings_update') || !$this->settings_update) {
             $this->settings_update = new \wpunewsletter\WPUBaseUpdate(
                 'WordPressUtilities',
@@ -728,7 +729,7 @@ class WPUNewsletter {
     ---------------------------------------------------------- */
 
     public function mailchimp_load() {
-        require_once dirname(__FILE__) . '/inc/mailchimp/Mailchimp.php';
+        require_once __DIR__ . '/inc/mailchimp/Mailchimp.php';
         $mailchimp_active = get_option('wpunewsletter_mailchimp_active');
         return ($mailchimp_active == 1);
     }
@@ -1448,7 +1449,7 @@ class WPUNewsletter {
     }
 }
 
-require_once dirname(__FILE__) . '/inc/widget.php';
+require_once __DIR__ . '/inc/widget.php';
 
 /* ----------------------------------------------------------
   Launch
