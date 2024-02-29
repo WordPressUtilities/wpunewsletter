@@ -27,7 +27,7 @@ class wpunewsletter_form extends WP_Widget {
 $text = !empty($instance['text']) ? $instance['text'] : '';
         ?>
         <p>
-        <label for="<?php echo esc_attr($this->get_field_id('text')); ?>"><?php esc_attr_e('Texte:', 'wpunewsletter');?></label>
+        <label for="<?php echo esc_attr($this->get_field_id('text')); ?>"><?php esc_attr_e('Text:', 'wpunewsletter');?></label>
         <input class="widefat" id="<?php echo esc_attr($this->get_field_id('text')); ?>" name="<?php echo esc_attr($this->get_field_name('text')); ?>" type="text" value="<?php echo esc_attr($text); ?>">
         </p>
         <?php
