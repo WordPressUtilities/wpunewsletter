@@ -4,7 +4,7 @@ namespace wpunewsletter;
 /*
 Class Name: WPU Base Admin Datas
 Description: A class to handle datas in WordPress admin
-Version: 3.10.1
+Version: 3.12.0
 Class URI: https://github.com/WordPressUtilities/wpubaseplugin
 Author: Darklg
 Author URI: https://darklg.me/
@@ -419,7 +419,7 @@ class WPUBaseAdminDatas {
     public function export_array_to_csv($array, $name) {
         if (isset($array[0])) {
             header('Content-Type: application/csv');
-            header('Content-Disposition: attachment; filename=export-list-' . $name . '-' . date_i18n('y-m-d') . '.csv');
+            header('Content-Disposition: attachment; filename=export-list-' . sanitize_title($name) . '-' . date_i18n('y-m-d') . '.csv');
             header('Pragma: no-cache');
             echo implode(';', array_keys($array[0])) . "\n";
             foreach ($array as $line) {
@@ -554,9 +554,9 @@ class WPUBaseAdminDatas {
         if ($item_id) {
             $_html .= '<h3>#' . $item_id . '</h3>';
         } else {
-            $_html .= '<h3>' . __('New Post') . '</h3>';
+            $_html .= '<h3>' . __('New Post', $this->settings['plugin_id']) . '</h3>';
         }
-        $_html .= '<a href="' . add_query_arg($_back_url_args, $this->pagename) . '">' . __('Back') . '</a>';
+        $_html .= '<a href="' . add_query_arg($_back_url_args, $this->pagename) . '">' . __('Back', $this->settings['plugin_id']) . '</a>';
 
         $_html .= '<table class="form-table"><tbody>';
         foreach ($this->settings['table_fields'] as $id => $field) {
@@ -613,6 +613,10 @@ class WPUBaseAdminDatas {
         // Per page
         if (!isset($args['perpage']) || !is_numeric($args['perpage'])) {
             $args['perpage'] = $this->default_perpage;
+        }
+
+        if (!isset($args['has_export'])) {
+            $args['has_export'] = true;
         }
 
         // Add ID
@@ -782,9 +786,9 @@ class WPUBaseAdminDatas {
         $search_form .= '<input type="hidden" name="order" value="' . esc_attr($args['order']) . '" />';
         $search_form .= '<input type="hidden" name="orderby" value="' . esc_attr($args['orderby']) . '" />';
         $search_form .= '<input type="search" name="where_text" value="' . esc_attr($where_text) . '" />';
-        $search_form .= get_submit_button(__('Search'), '', 'submit', false);
+        $search_form .= get_submit_button(__('Search', $this->settings['plugin_id']), '', 'submit', false);
         if ($where_text) {
-            $search_form .= '<br /><small><a href="' . add_query_arg($url_items_clear, $this->pagename) . '">' . __('Clear') . '</a></small>';
+            $search_form .= '<br /><small><a href="' . add_query_arg($url_items_clear, $this->pagename) . '">' . __('Clear', $this->settings['plugin_id']) . '</a></small>';
         }
         $search_form .= '</p><br class="clear" /></form><div class="clear"></div>';
 
@@ -796,7 +800,7 @@ class WPUBaseAdminDatas {
         $content .= wp_nonce_field('action-main-form-' . $page_id, 'action-main-form-admin-datas-' . $page_id, true, false);
         if ($has_id && $is_admin_view && $this->settings['can_create']) {
             $new_url = add_query_arg(array('backquery' => $_back_query), $this->pagename . '&create=1');
-            $content .= '<p><a class="page-title-action" href="' . $new_url . '">' . __('New Post') . '</a></p>';
+            $content .= '<p><a class="page-title-action" href="' . $new_url . '">' . __('New Post', $this->settings['plugin_id']) . '</a></p>';
         }
         $content .= '<table class="wp-list-table widefat striped">';
         if (isset($args['columns']) && is_array($args['columns']) && !empty($args['columns'])) {
@@ -841,29 +845,33 @@ class WPUBaseAdminDatas {
 
                 $content .= $cell_content;
                 if ($cell_id == $args['primary_column']) {
-                    $content .= '<button type="button" class="toggle-row"><span class="screen-reader-text">' . __('Show more details') . '</span></button>';
+                    $content .= '<button type="button" class="toggle-row"><span class="screen-reader-text">' . __('Show more details', $this->settings['plugin_id']) . '</span></button>';
                 }
                 $content .= '</td>';
             }
             if ($has_id && $is_admin_view) {
                 $edit_url = add_query_arg(array('backquery' => $_back_query), $this->pagename . '&item_id=' . $vals->id);
-                $content .= '<td><a href="' . $edit_url . '">' . ($this->settings['can_edit'] ? __('Edit') : __('View')) . '</a></td>';
+                $content .= '<td><a href="' . $edit_url . '">' . ($this->settings['can_edit'] ? __('Edit', $this->settings['plugin_id']) : __('View', $this->settings['plugin_id'])) . '</a></td>';
             }
             $content .= '</tr>';
         }
         $content .= '</tbody>';
         $content .= '</table>';
         if ($has_id) {
-            $content .= '<p class="admindatas-delete-button">' . get_submit_button(__('Delete'), 'delete', 'delete_lines', false) . '</p>';
+            $content .= '<p class="admindatas-delete-button">' . get_submit_button(__('Delete', $this->settings['plugin_id']), 'delete', 'delete_lines', false) . '</p>';
         }
         $content .= '</form>';
         $content .= $clear_form;
         $content .= $search_form;
         $content .= $pagination;
-        $content .= '<a href="' . admin_url($export_url_base) . '">' . __('Export all') . '</a>';
-        if ($where_text || $has_filter_key) {
-            $content .= ' <a href="' . admin_url($export_url) . '">' . __('Export filtered view') . '</a>';
+
+        if ($args['has_export']) {
+            $content .= '<a href="' . admin_url($export_url_base) . '">' . __('Export all', $this->settings['plugin_id']) . '</a>';
+            if ($where_text || $has_filter_key) {
+                $content .= ' <a href="' . admin_url($export_url) . '">' . __('Export filtered view', $this->settings['plugin_id']) . '</a>';
+            }
         }
+
         $content .= <<<HTML
 <style>
 .admindatas-search-filter{

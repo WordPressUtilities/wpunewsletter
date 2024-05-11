@@ -5,13 +5,14 @@ Plugin Name: WP Utilities Newsletter
 Plugin URI: https://github.com/WordPressUtilities/wpunewsletter
 Update URI: https://github.com/WordPressUtilities/wpunewsletter
 Description: Allow subscriptions to a newsletter.
-Version: 2.5.2
+Version: 3.0.0
 Author: Darklg
 Author URI: https://darklg.me/
 Text Domain: wpunewsletter
 Domain Path: /lang
 Requires at least: 6.2
 Requires PHP: 8.0
+Network: Optional
 License: MIT License
 License URI: https://opensource.org/licenses/MIT
 */
@@ -46,7 +47,7 @@ class WPUNewsletter {
     public $plugin_dir;
     public $plugin_id;
     public $plugin_url;
-    public $plugin_version = '2.5.2';
+    public $plugin_version = '3.0.0';
     public $settings_update;
     public $table_name;
     public $table_name_raw;
@@ -729,28 +730,92 @@ class WPUNewsletter {
     ---------------------------------------------------------- */
 
     public function mailchimp_load() {
-        require_once __DIR__ . '/inc/mailchimp/Mailchimp.php';
         $mailchimp_active = get_option('wpunewsletter_mailchimp_active');
         return ($mailchimp_active == 1);
     }
 
-    public function mailchimp_test($api_key, $list_id) {
+    public function mailchimp_api_call($route, $args) {
+        if (!is_array($args)) {
+            $args = array();
+        }
+        $method = 'GET';
+        if (isset($args['method'])) {
+            $method = $args['method'];
+            unset($args['method']);
+        }
+        $api_key = get_option('wpunewsletter_mailchimp_apikey');
+        if (isset($args['api_key'])) {
+            $api_key = $args['api_key'];
+        }
+        $dc = get_option('wpunewsletter_mailchimp_apidc');
+        if (isset($args['dc'])) {
+            $dc = $args['dc'];
+        }
+
+        if (!$dc || !$api_key) {
+            error_log('Mailchimp API call error : missing API key or DC');
+            return false;
+        }
+
+        $url = "https://${dc}.api.mailchimp.com/3.0/${route}";
+        $args['headers'] = array(
+            'Authorization' => 'Basic ' . base64_encode("anystring:${api_key}")
+        );
+        $args['httpversion'] = '1.0';
+        $args['sslverify'] = false;
+
+        switch ($method) {
+        case 'GET':
+            $response = wp_remote_get($url, $args);
+            break;
+        case 'POST':
+            $args['headers']['Content-Type'] = 'application/json';
+            $response = wp_remote_post($url, $args);
+            break;
+        }
+
+        if (is_wp_error($response)) {
+            return false;
+        }
+
+        $response = wp_remote_retrieve_body($response);
+        $result = json_decode($response, true);
+
+        return $result;
+    }
+
+    public function mailchimp_test($api_key, $dc, $list_id) {
         if (!$this->mailchimp_load()) {
             return false;
         }
 
-        $Mailchimp = new Mailchimp($api_key);
-        $Mailchimp_Lists = new Mailchimp_Lists($Mailchimp);
+        $test = $this->mailchimp_api_call('ping', array(
+            'api_key' => $api_key,
+            'dc' => $dc
+        ));
 
-        $all_lists = $Mailchimp_Lists->getList(array());
+        if (!is_array($test) || !isset($test['health_status'])) {
+            var_dump($test);
+            return false;
+        }
+
+        $all_lists = $this->mailchimp_api_call('lists', array(
+            'api_key' => $api_key,
+            'dc' => $dc
+        ));
+
         $lists = array();
-        if (is_array($all_lists['data'])) {
-            foreach ($all_lists['data'] as $list) {
-                $merge_vars = $Mailchimp_Lists->mergeVars(array($list['id']));
+        if (is_array($all_lists['lists'])) {
+            foreach ($all_lists['lists'] as $list) {
+                $merge_vars = $this->mailchimp_api_call('lists/' . $list['id'] . '/merge-fields', array(
+                    'api_key' => $api_key,
+                    'dc' => $dc
+                ));
+
                 $has_required_fields = false;
                 if (is_array($merge_vars)) {
-                    foreach ($merge_vars['data'][0]['merge_vars'] as $var) {
-                        if ($var['field_type'] != 'email' && $var['req']) {
+                    foreach ($merge_vars['merge_fields'] as $var) {
+                        if ($var['type'] != 'email' && $var['required']) {
                             $has_required_fields = true;
                             break;
                         }
@@ -762,30 +827,25 @@ class WPUNewsletter {
                     'name' => $list['name']
                 );
             }
+
             update_option('wpunewsletter__mailchimp__lists', $lists, 'yes');
         }
 
-        $subscriber = $Mailchimp_Lists->getList(array(
-            'exact' => 1,
-            'list_id' => $list_id
+        $subscriber = $this->mailchimp_api_call('lists/' . $list_id, array(
+            'api_key' => $api_key,
+            'dc' => $dc
         ));
 
-        return (isset($subscriber['data'], $subscriber['data'][0], $subscriber['data'][0]['id']) && $subscriber['data'][0]['id'] == $list_id);
+        return ($subscriber && isset($subscriber['id']) && $subscriber['id'] == $list_id);
     }
 
     public function mailchimp_register($email_vars, $email_args = array()) {
         if (!$this->mailchimp_load()) {
             return false;
         }
-        $api_key = get_option('wpunewsletter_mailchimp_apikey');
-        $list_id = get_option('wpunewsletter_mailchimp_listid');
-        $double_optin = (get_option('wpunewsletter_mailchimp_double_optin') == '1');
-
-        $Mailchimp = new Mailchimp($api_key);
-        $Mailchimp_Lists = new Mailchimp_Lists($Mailchimp);
 
         $all_lists = get_option('wpunewsletter__mailchimp__lists');
-        $list_id = apply_filters('wpunewsletter_mailchimp_listid__before_submit', $list_id, $all_lists);
+        $list_id = apply_filters('wpunewsletter_mailchimp_listid__before_submit', get_option('wpunewsletter_mailchimp_listid'), $all_lists);
 
         /* If a list is specified, override the default list choice */
         if (is_array($all_lists) && isset($email_args['mclist_id']) && $email_args['mclist_id']) {
@@ -796,11 +856,17 @@ class WPUNewsletter {
             }
         }
 
-        $subscriber = $Mailchimp_Lists->subscribe($list_id, array(
-            'email' => htmlentities($email_vars['email'])
-        ), null, 'html', $double_optin, true);
+        $members = array(array(
+            'email_address' => htmlentities($email_vars['email']),
+            'status' => 'subscribed'
+        ));
 
-        $is_subscribed = !empty($subscriber['leid']);
+        $subscriber = $this->mailchimp_api_call('lists/' . $list_id, array(
+            'method' => 'POST',
+            'body' => json_encode(array(
+                'members' => $members
+            ))
+        ));
     }
 
     /* ----------------------------------------------------------
@@ -1039,6 +1105,16 @@ class WPUNewsletter {
         $html = '<p>';
         $html .= '<strong><label for="' . $id . '">' . $name . '</label></strong><br />';
         $html .= '<input type="' . $type . '" id="' . $id . '" name="' . $id . '" value="' . esc_attr(get_option($id)) . '" />';
+        if ($id == 'wpunewsletter_mailchimp_apidc') {
+            $html .= '<small style="display:block">';
+            $html .= sprintf(__('Find your DC in the URL of your Mailchimp account. Example: The DC for the url %s is %s', 'wpunewsletter'), 'https://<strong>us1</strong>.admin.mailchimp.com/lists/', '<strong>us1</strong>.');
+            $html .= '</small>';
+        }
+        if ($id == 'wpunewsletter_mailchimp_apikey') {
+            $html .= '<small style="display:block">';
+            $html .= sprintf(__('Find your <a target="_blank" href="%s">API Key here</a>.', 'wpunewsletter'), 'https://admin.mailchimp.com/account/api/');
+            $html .= '</small>';
+        }
         $html .= '</p>';
         return $html;
     }
@@ -1112,7 +1188,7 @@ class WPUNewsletter {
         $_mailchimpIsOpen = (get_option('wpunewsletter_mailchimp_active') == '1');
         echo '<div id="wpunewsletter-mailchimp-detail" style="' . ($_mailchimpIsOpen ? '' : 'display: none;') . '">';
         echo $this->form_item__checkbox('wpunewsletter_mailchimp_double_optin', __('Use double optin', 'wpunewsletter'));
-        echo '<p>' . sprintf(__('Find your <a target="_blank" href="%s">API Key here</a>.', 'wpunewsletter'), 'https://admin.mailchimp.com/account/api/') . '</p>';
+        echo $this->form_item__text('wpunewsletter_mailchimp_apidc', __('DC', 'wpunewsletter'));
         echo $this->form_item__text('wpunewsletter_mailchimp_apikey', __('API Key', 'wpunewsletter'));
         $lists = get_option('wpunewsletter__mailchimp__lists');
         if (is_array($lists)) {
@@ -1172,6 +1248,7 @@ class WPUNewsletter {
             'wpunewsletter_useremailfromaddress' => '',
             'wpunewsletter_useremailfromname' => '',
             'wpunewsletter_mailchimp_apikey' => '',
+            'wpunewsletter_mailchimp_apidc' => '',
             'wpunewsletter_mailchimp_listid' => ''
         );
         foreach ($text_fields as $key => $var) {
@@ -1184,7 +1261,7 @@ class WPUNewsletter {
         $this->admin_messages[] = __('Success : Updated options', 'wpunewsletter');
 
         if (isset($_POST['test']) && isset($_POST['wpunewsletter_mailchimp_active'])) {
-            $test = $this->mailchimp_test($_POST['wpunewsletter_mailchimp_apikey'], $_POST['wpunewsletter_mailchimp_listid']);
+            $test = $this->mailchimp_test($_POST['wpunewsletter_mailchimp_apikey'], $_POST['wpunewsletter_mailchimp_apidc'], $_POST['wpunewsletter_mailchimp_listid']);
             if ($test) {
                 $this->admin_messages[] = __('Success : Mailchimp IDs are correct', 'wpunewsletter');
             } else {

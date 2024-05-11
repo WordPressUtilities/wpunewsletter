@@ -1,4 +1,5 @@
 <?php
+defined('ABSPATH') || die;
 class BaseTest extends WP_UnitTestCase {
 
     public $plugin;
