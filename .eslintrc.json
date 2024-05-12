@@ -11,6 +11,7 @@
         "no-prototype-builtins": 0
     },
     "globals": {
+        "wpunewsletter_options": true,
         "wp": true,
         "jQuery": true
     }
