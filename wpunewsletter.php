@@ -5,7 +5,7 @@ Plugin Name: WP Utilities Newsletter
 Plugin URI: https://github.com/WordPressUtilities/wpunewsletter
 Update URI: https://github.com/WordPressUtilities/wpunewsletter
 Description: Allow subscriptions to a newsletter.
-Version: 3.3.0
+Version: 3.3.1
 Author: Darklg
 Author URI: https://darklg.me/
 Text Domain: wpunewsletter
@@ -47,7 +47,7 @@ class WPUNewsletter {
     public $plugin_dir;
     public $plugin_id;
     public $plugin_url;
-    public $plugin_version = '3.3.0';
+    public $plugin_version = '3.3.1';
     public $settings_update;
     public $table_name;
     public $table_name_raw;
@@ -748,9 +748,9 @@ class WPUNewsletter {
             return false;
         }
 
-        $url = "https://${dc}.api.mailchimp.com/3.0/${route}";
+        $url = "https://" . $dc . ".api.mailchimp.com/3.0/" . $route;
         $args['headers'] = array(
-            'Authorization' => 'Basic ' . base64_encode("anystring:${api_key}")
+            'Authorization' => 'Basic ' . base64_encode("anystring:" . $api_key)
         );
         $args['httpversion'] = '1.0';
         $args['sslverify'] = false;
