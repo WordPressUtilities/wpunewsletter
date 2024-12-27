@@ -5,7 +5,7 @@ Plugin Name: WP Utilities Newsletter
 Plugin URI: https://github.com/WordPressUtilities/wpunewsletter
 Update URI: https://github.com/WordPressUtilities/wpunewsletter
 Description: Allow subscriptions to a newsletter.
-Version: 3.1.0
+Version: 3.2.0
 Author: Darklg
 Author URI: https://darklg.me/
 Text Domain: wpunewsletter
@@ -47,7 +47,7 @@ class WPUNewsletter {
     public $plugin_dir;
     public $plugin_id;
     public $plugin_url;
-    public $plugin_version = '3.1.0';
+    public $plugin_version = '3.2.0';
     public $settings_update;
     public $table_name;
     public $table_name_raw;
@@ -219,8 +219,10 @@ class WPUNewsletter {
     // Translation
     public function load_translation() {
         $lang_dir = dirname(plugin_basename(__FILE__)) . '/lang/';
-        if (!load_plugin_textdomain('wpunewsletter', false, $lang_dir)) {
+        if (strpos(__DIR__, 'mu-plugins') !== false) {
             load_muplugin_textdomain('wpunewsletter', $lang_dir);
+        } else {
+            load_plugin_textdomain('wpunewsletter', false, $lang_dir);
         }
         $this->plugin_description = __('Allow subscriptions to a newsletter.', 'wpunewsletter');
     }
@@ -436,7 +438,7 @@ class WPUNewsletter {
             }
             echo '</table>';
             echo wp_nonce_field('wpunewsletter_delete', 'wpunewsletter_delete_nonce');
-            echo submit_button(__('Delete selected lines', 'wpunewsletter'));
+            submit_button(__('Delete selected lines', 'wpunewsletter'));
             echo '</form>';
         }
         echo '</div>';
@@ -496,7 +498,7 @@ class WPUNewsletter {
         echo '<label for="wpunewsletter_import_addresses">' . __('Addresses to import:', 'wpunewsletter') . '<br /></label> ';
         echo '<textarea required name="wpunewsletter_import_addresses" id="wpunewsletter_import_addresses" cols="30" rows="10"></textarea>';
         echo wp_nonce_field('wpunewsletter_import', 'wpunewsletter_import_nonce');
-        echo submit_button(__('Import addresses', 'wpunewsletter'));
+        submit_button(__('Import addresses', 'wpunewsletter'));
         echo '</form>
         </div>';
     }
@@ -565,7 +567,7 @@ class WPUNewsletter {
         <option value="all">' . __('All', 'wpunewsletter') . '</option>
     </select></p>';
         echo wp_nonce_field('wpunewsletter_export', 'wpunewsletter_export_nonce');
-        echo submit_button(__('Export addresses', 'wpunewsletter'));
+        submit_button(__('Export addresses', 'wpunewsletter'));
         echo '</form>';
 
         /* Users */
@@ -584,7 +586,7 @@ class WPUNewsletter {
         }
         echo '</select></p>';
         echo wp_nonce_field('wpunewsletter_exportusers', 'wpunewsletter_exportusers_nonce');
-        echo submit_button(__('Export addresses', 'wpunewsletter'));
+        submit_button(__('Export addresses', 'wpunewsletter'));
         echo '</form>';
 
         /* Custom */
@@ -603,7 +605,7 @@ class WPUNewsletter {
             }
             echo '</select></p>';
             echo wp_nonce_field('wpunewsletter_exportcustom', 'wpunewsletter_exportcustom_nonce');
-            echo submit_button(__('Export addresses', 'wpunewsletter'));
+            submit_button(__('Export addresses', 'wpunewsletter'));
             echo '</form>';
         }
 
@@ -1190,8 +1192,8 @@ class WPUNewsletter {
         echo '<hr />';
         echo wp_nonce_field('wpunewsletter_settings', 'wpunewsletter_settings_nonce');
         echo '<p>';
-        echo submit_button(__('Update and test options', 'wpunewsletter'), 'secondary', 'test', false) . ' ';
-        echo submit_button(__('Update options', 'wpunewsletter'), 'primary', 'save', false);
+        submit_button(__('Update and test options', 'wpunewsletter'), 'secondary', 'test', false) . ' ';
+        submit_button(__('Update options', 'wpunewsletter'), 'primary', 'save', false);
         echo '</p>';
         echo '</form></div>';
     }
