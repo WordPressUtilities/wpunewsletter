@@ -76,6 +76,14 @@ class BaseTest extends WP_UnitTestCase {
             'ez' => array(
                 'char_limit' => 10
             ) ,
+            'fz' => array(
+                'type' => 'select',
+                'options' => array('mr' => 'Monsieur', 'mrs' => 'Madame')
+            ) ,
+            'gz' => array(
+                'type' => 'radio',
+                'options' => array('sport' => 'Sport', 'culture' => 'Culture')
+            ) ,
         );
 
         // Load extra fields
@@ -88,6 +96,8 @@ class BaseTest extends WP_UnitTestCase {
             'cz' => 'test@yopmail.com',
             'dz' => 'https://github.com',
             'ez' => 'loremipsum',
+            'fz' => 'mr',
+            'gz' => 'sport',
         );
         $test_values = array();
         foreach ($valid_values as $id => $val) {
@@ -102,6 +112,8 @@ class BaseTest extends WP_UnitTestCase {
             'wpunewsletter_extra__cz' => 'tesyopmailcom',
             'wpunewsletter_extra__dz' => 'lorem',
             'wpunewsletter_extra__ez' => 'loremipsumaz',
+            'wpunewsletter_extra__fz' => 'invalid_option',
+            'wpunewsletter_extra__gz' => 'invalid_option',
         ));
 
         // HTML must be encoded
@@ -118,6 +130,12 @@ class BaseTest extends WP_UnitTestCase {
 
         // Text over the char limit must be truncated
         $this->assertEquals('loremipsum', $values['ez']);
+
+        // Invalid select option must be emptied
+        $this->assertEquals('', $values['fz']);
+
+        // Invalid radio option must be emptied
+        $this->assertEquals('', $values['gz']);
 
         // Test required values
         $base_test_values['bz']['required'] = true;

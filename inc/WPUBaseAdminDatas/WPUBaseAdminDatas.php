@@ -4,7 +4,7 @@ namespace wpunewsletter;
 /*
 Class Name: WPU Base Admin Datas
 Description: A class to handle datas in WordPress admin
-Version: 4.5.0
+Version: 4.11.3
 Class URI: https://github.com/WordPressUtilities/wpubaseplugin
 Author: Darklg
 Author URI: https://darklg.me/
@@ -32,6 +32,7 @@ class WPUBaseAdminDatas {
         'textarea',
         'date',
         'number',
+        'post',
         'true_false',
         'email'
     );
@@ -100,7 +101,11 @@ class WPUBaseAdminDatas {
         // Build query
         foreach ($settings['table_fields'] as $id => $field) {
             if (!isset($field['public_name'])) {
-                $settings['table_fields'][$id]['public_name'] = $id;
+                $_name = $id;
+                if (isset($field['label'])) {
+                    $_name = $field['label'];
+                }
+                $settings['table_fields'][$id]['public_name'] = $_name;
             }
             if (!isset($field['type'])) {
                 $settings['table_fields'][$id]['type'] = isset($field['type']) ? $field['type'] : 'varchar';
@@ -118,6 +123,10 @@ class WPUBaseAdminDatas {
 
         if (!isset($settings['user_level'])) {
             $settings['user_level'] = $this->user_level;
+        }
+
+        if (!isset($settings['id_type'])) {
+            $settings['id_type'] = 'mediumint unsigned';
         }
 
         if (!isset($settings['handle_database'])) {
@@ -161,10 +170,13 @@ class WPUBaseAdminDatas {
             return;
         }
         global $wpdb;
+        if (!$wpdb || !$wpdb->ready) {
+            return;
+        }
 
         // Assemble fields
         $fields_query = array(
-            'id mediumint(8) unsigned NOT NULL auto_increment',
+            'id ' . $this->settings['id_type'] . ' NOT NULL auto_increment',
             'creation TIMESTAMP DEFAULT CURRENT_TIMESTAMP',
             'PRIMARY KEY (id)'
         );
@@ -182,7 +194,7 @@ class WPUBaseAdminDatas {
         }
 
         // If query has changed since last time
-        $sql_md5 = md5(serialize($table_fields));
+        $sql_md5 = md5($sql_query . 'erazaa' . serialize($table_fields));
         $sql_option_value = get_option($this->sql_option_name);
         if ($sql_md5 != $sql_option_value) {
             // Update or create table
@@ -190,6 +202,17 @@ class WPUBaseAdminDatas {
 
             // Create table
             maybe_create_table($this->tablename, $sql_query);
+
+            $columns = $wpdb->get_results("DESC " . $this->tablename);
+            $columns_keys = array_map(function ($col) {
+                return $col->Field;
+            }, $columns);
+            foreach ($columns as $column) {
+                if ($column->Field != 'id' && $column->Type == $this->settings['id_type']) {
+                    continue;
+                }
+                $wpdb->query("ALTER TABLE " . $this->tablename . " MODIFY COLUMN id " . $this->settings['id_type'] . " NOT NULL AUTO_INCREMENT");
+            }
 
             foreach ($table_fields as $column_name => $col) {
                 switch ($col['type']) {
@@ -199,6 +222,9 @@ class WPUBaseAdminDatas {
                 case 'number':
                     $col_sql = 'MEDIUMINT UNSIGNED';
                     break;
+                case 'date':
+                    $col_sql = 'DATE';
+                    break;
                 case 'timestamp':
                     $col_sql = 'TIMESTAMP';
                     break;
@@ -206,7 +232,12 @@ class WPUBaseAdminDatas {
                     $col_sql = $col['sql'];
                 }
 
-                maybe_add_column($this->tablename, $column_name, 'ALTER TABLE ' . $this->tablename . ' ADD ' . $column_name . ' ' . $col_sql);
+                if (in_array($column_name, $columns_keys)) {
+                    $wpdb->query("ALTER TABLE " . $this->tablename . " MODIFY COLUMN " . $column_name . " " . $col_sql);
+                } else {
+                    maybe_add_column($this->tablename, $column_name, 'ALTER TABLE ' . $this->tablename . ' ADD ' . $column_name . ' ' . $col_sql);
+                }
+
             }
 
             // Update option hash
@@ -375,6 +406,7 @@ class WPUBaseAdminDatas {
                 array('ID' => $item_id)
             );
         }
+        return $item_id;
     }
 
     /* ----------------------------------------------------------
@@ -387,9 +419,16 @@ class WPUBaseAdminDatas {
             return !!filter_var($value, FILTER_VALIDATE_EMAIL);
             break;
 
+        case 'date':
+            return !!\DateTime::createFromFormat('Y-m-d', $value);
+            break;
+
         case 'url':
             return !!filter_var($value, FILTER_VALIDATE_URL);
             break;
+
+        case 'post':
+            return !!get_post($value);
 
         case 'number':
             return is_numeric($value);
@@ -462,7 +501,7 @@ class WPUBaseAdminDatas {
     ---------------------------------------------------------- */
 
     public function export_array_to_csv($array, $name) {
-        _deprecated_function('export_array_to_csv', '4.5.0');
+        _deprecated_function('export_array_to_csv', '4.7.0');
 
         if (isset($array[0])) {
             header('Content-Type: application/csv');
@@ -615,6 +654,22 @@ class WPUBaseAdminDatas {
                 switch ($field['field_type']) {
                 case 'textarea':
                     $_html .= '<textarea ' . $field['field_attributes'] . ' rows="5" cols="30" id="' . $_fieldId . '" name="admindatas_fields[' . $id . ']">' . $value . '</textarea>';
+                    break;
+                case 'post':
+                    $_posts = get_posts(array(
+                        'post_type' => isset($field['post_type']) ? $field['post_type'] : 'post',
+                        'numberposts' => -1,
+                        'post_status' => 'any',
+                        'orderby' => 'title',
+                        'order' => 'ASC'
+                    ));
+                    $_html .= '<select ' . $field['field_attributes'] . ' id="' . $_fieldId . '" name="admindatas_fields[' . $id . ']">';
+                    $_html .= '<option value="">' . __('Select a post', $this->settings['plugin_id']) . '</option>';
+
+                    foreach ($_posts as $_post) {
+                        $_html .= '<option value="' . esc_attr($_post->ID) . '"' . selected($value, $_post->ID, false) . '>' . esc_html($_post->post_title) . '</option>';
+                    }
+                    $_html .= '</select>';
                     break;
                 case 'true_false':
                     $_html .= '<label><input ' . $field['field_attributes'] . ' type="radio" id="' . $_fieldId . '" name="admindatas_fields[' . $id . ']" ' . ($value != '1' ? 'checked' : '') . ' value="0" />' . __('No') . '</label>';
@@ -833,7 +888,7 @@ class WPUBaseAdminDatas {
         $content .= '<input type="hidden" name="action" value="admindatas_' . $this->settings['plugin_id'] . '">';
         $content .= '<input type="hidden" name="page" value="' . esc_attr($page_id) . '" />';
         $content .= wp_nonce_field('action-main-form-' . $page_id, 'action-main-form-admin-datas-' . $page_id, true, false);
-        if ($has_id && $is_admin_view && $this->settings['can_create']) {
+        if ($is_admin_view && $this->settings['can_create']) {
             $new_url = add_query_arg(array('backquery' => $_back_query), $this->pagename . '&create=1');
             $content .= '<p><a class="page-title-action" href="' . $new_url . '">' . __('New Post', $this->settings['plugin_id']) . '</a></p>';
         }
@@ -867,7 +922,8 @@ class WPUBaseAdminDatas {
                 $content .= '<th scope="row" class="check-column" class="column-cb check-column"><input type="checkbox" name="select_line[' . $vals->id . ']" value="' . $vals->id . '" /></th>';
             }
             foreach ($vals as $cell_id => $val) {
-                $val = (empty($val) ? '&nbsp;' : $val);
+                $val = (empty($val) ? "\xC2\xA0" : $val);
+                $val = htmlspecialchars($val, ENT_QUOTES, "UTF-8");
                 $content .= '<td data-colname="' . esc_attr($args['columns'][$cell_id]['label']) . '" class="' . ($cell_id == $args['primary_column'] ? 'column-primary' : '') . '">';
                 $cell_content = apply_filters('wpubaseadmindatas_cellcontent', $val, $cell_id, $this->settings);
 
@@ -997,6 +1053,30 @@ HTML;
         return trim($query);
     }
 
+    function create_or_edit($datas, $args = array()) {
+        if (!is_array($args)) {
+            $args = array();
+        }
+        $args = array_merge(array(
+            'uniqid' => false,
+            'uniqid_field' => 'id',
+            'value_type' => '%s',
+            'extra_datas_updated' => array(),
+            'extra_datas_created' => array()
+        ), $args);
+
+        $line = $this->get_line_by($args['uniqid_field'], $args['uniqid'], $args['value_type']);
+
+        $line_id = ($line && is_array($line) && isset($line['id'])) ? $line['id'] : false;
+        if ($line_id) {
+            $datas = array_merge($datas, $args['extra_datas_updated']);
+            return $this->edit_line($line_id, $datas);
+        } else {
+            $datas = array_merge($datas, $args['extra_datas_created']);
+            return $this->create_line($datas);
+        }
+    }
+
     /* ----------------------------------------------------------
       Helpers
     ---------------------------------------------------------- */
@@ -1006,6 +1086,9 @@ HTML;
         $page_id = '';
         if (property_exists($screen, 'parent_base')) {
             $page_id = $screen->parent_base;
+        }
+        if (isset($_GET['page']) && !empty($_GET['page'])) {
+            $page_id = sanitize_text_field($_GET['page']);
         }
         return $page_id;
     }

@@ -5,7 +5,7 @@ Plugin Name: WP Utilities Newsletter
 Plugin URI: https://github.com/WordPressUtilities/wpunewsletter
 Update URI: https://github.com/WordPressUtilities/wpunewsletter
 Description: Allow subscriptions to a newsletter.
-Version: 3.3.1
+Version: 4.0.0
 Author: Darklg
 Author URI: https://darklg.me/
 Text Domain: wpunewsletter
@@ -47,7 +47,7 @@ class WPUNewsletter {
     public $plugin_dir;
     public $plugin_id;
     public $plugin_url;
-    public $plugin_version = '3.3.1';
+    public $plugin_version = '4.0.0';
     public $settings_update;
     public $table_name;
     public $table_name_raw;
@@ -171,6 +171,11 @@ class WPUNewsletter {
             'mailchimp_register'
         ), 10, 2);
 
+        // Brevo
+        add_action('wpunewsletter_mail_registered', array(&$this,
+            'brevo_register'
+        ), 10, 2);
+
         if (isset($_GET['page']) && (strpos($_GET['page'], 'wpunewsletter') !== false)) {
             add_action('admin_enqueue_scripts', array(&$this,
                 'admin_enqueue_scripts'
@@ -241,7 +246,9 @@ class WPUNewsletter {
             'text',
             'email',
             'url',
-            'checkbox'
+            'checkbox',
+            'select',
+            'radio'
         );
         $this->extra_fields = array();
         foreach ($extra_fields as $id => $_f) {
@@ -256,6 +263,8 @@ class WPUNewsletter {
             $wrapper_classname = isset($_f['wrapper_classname']) ? esc_html($_f['wrapper_classname']) : '';
             $type = isset($_f['type']) && in_array($_f['type'], $_field_types) ? $_f['type'] : $_field_types[0];
             $char_limit = (isset($_f['char_limit']) && is_numeric($_f['char_limit'])) ? $_f['char_limit'] : 200;
+            $brevo_attribute = isset($_f['brevo_attribute']) ? sanitize_text_field($_f['brevo_attribute']) : '';
+            $options = (isset($_f['options']) && is_array($_f['options'])) ? $_f['options'] : array();
 
             $this->extra_fields[$id] = array(
                 'required' => $required,
@@ -267,7 +276,9 @@ class WPUNewsletter {
                 'label_classname' => $label_classname,
                 'wrapper_classname' => $wrapper_classname,
                 'type' => $type,
-                'char_limit' => $char_limit
+                'char_limit' => $char_limit,
+                'brevo_attribute' => $brevo_attribute,
+                'options' => $options
             );
         }
     }
@@ -836,7 +847,7 @@ class WPUNewsletter {
         }
 
         $all_lists = get_option('wpunewsletter__mailchimp__lists');
-        $list_id = apply_filters('wpunewsletter_mailchimp_listid__before_submit', get_option('wpunewsletter_mailchimp_listid'), $all_lists);
+        $list_id = apply_filters('wpunewsletter_mailchimp_listid__before_submit', get_option('wpunewsletter_mailchimp_listid'), $all_lists, $email_vars, $email_args);
         $need_optin = get_option('wpunewsletter_mailchimp_double_optin') == '1';
 
         /* If a list is specified, override the default list choice */
@@ -858,6 +869,153 @@ class WPUNewsletter {
             'body' => json_encode(array(
                 'members' => $members
             ))
+        ));
+    }
+
+    /* ----------------------------------------------------------
+      Brevo
+    ---------------------------------------------------------- */
+
+    public function brevo_load() {
+        $brevo_active = get_option('wpunewsletter_brevo_active');
+        return ($brevo_active == 1);
+    }
+
+    public function brevo_api_call($route, $args = array()) {
+        if (!is_array($args)) {
+            $args = array();
+        }
+        $method = 'GET';
+        if (isset($args['method'])) {
+            $method = $args['method'];
+            unset($args['method']);
+        }
+        $api_key = get_option('wpunewsletter_brevo_apikey');
+        if (isset($args['api_key'])) {
+            $api_key = $args['api_key'];
+            unset($args['api_key']);
+        }
+
+        if (!$api_key) {
+            error_log('Brevo API call error : missing API key');
+            return false;
+        }
+
+        $url = "https://api.brevo.com/v3/" . $route;
+        $args['headers'] = array(
+            'api-key' => $api_key,
+            'Content-Type' => 'application/json',
+            'Accept' => 'application/json'
+        );
+        $args['httpversion'] = '1.0';
+        $args['sslverify'] = false;
+
+        switch ($method) {
+        case 'GET':
+            $response = wp_remote_get($url, $args);
+            break;
+        case 'POST':
+            $response = wp_remote_post($url, $args);
+            break;
+        }
+
+        if (is_wp_error($response)) {
+            return false;
+        }
+
+        $response = wp_remote_retrieve_body($response);
+        $result = json_decode($response, true);
+
+        return $result;
+    }
+
+    public function brevo_test($api_key, $list_id) {
+        if (!$this->brevo_load()) {
+            return false;
+        }
+
+        $test = $this->brevo_api_call('account', array(
+            'api_key' => $api_key
+        ));
+
+        if (!is_array($test) || !isset($test['email'])) {
+            return false;
+        }
+
+        $all_lists = $this->brevo_api_call('contacts/lists?limit=50', array(
+            'api_key' => $api_key
+        ));
+
+        $lists = array();
+        if (is_array($all_lists) && isset($all_lists['lists']) && is_array($all_lists['lists'])) {
+            foreach ($all_lists['lists'] as $list) {
+                $lists[$list['id']] = array(
+                    'name' => $list['name']
+                );
+            }
+            update_option('wpunewsletter__brevo__lists', $lists, 'yes');
+        }
+
+        return isset($lists[$list_id]);
+    }
+
+    public function brevo_register($email_vars, $email_args = array()) {
+        if (!$this->brevo_load()) {
+            return false;
+        }
+
+        $all_lists = get_option('wpunewsletter__brevo__lists');
+        $list_id = apply_filters('wpunewsletter_brevo_listid__before_submit', get_option('wpunewsletter_brevo_listid'), $all_lists, $email_vars, $email_args);
+
+        /* If a list is specified, override the default list choice */
+        if (is_array($all_lists) && isset($email_args['brevolist_id']) && $email_args['brevolist_id']) {
+            foreach ($all_lists as $all_lists_item_id => $list_details) {
+                if (md5('wpu_' . $all_lists_item_id) == $email_args['brevolist_id']) {
+                    $list_id = $all_lists_item_id;
+                }
+            }
+        }
+
+        $list_id = intval($list_id);
+        if (!$list_id) {
+            return false;
+        }
+
+        $need_optin = get_option('wpunewsletter_brevo_double_optin') == '1';
+
+        $body = array(
+            'email' => $email_vars['email'],
+            'listIds' => array($list_id),
+            'updateEnabled' => true
+        );
+
+        $extra = json_decode($email_vars['extra'], true);
+        if (is_array($extra) && !empty($extra)) {
+            $attributes = array();
+            foreach ($this->extra_fields as $field_id => $field_def) {
+                if (!empty($field_def['brevo_attribute']) && isset($extra[$field_id])) {
+                    $attributes[$field_def['brevo_attribute']] = $extra[$field_id];
+                }
+            }
+            if (!empty($attributes)) {
+                $body['attributes'] = $attributes;
+            }
+        }
+
+        if ($need_optin) {
+            $endpoint = 'contacts/doubleOptinConfirmation';
+            $body['templateId'] = apply_filters('wpunewsletter_brevo_doi_templateid', null);
+            $body['redirectionUrl'] = apply_filters('wpunewsletter_brevo_doi_redirectionurl', home_url());
+            if (!$body['templateId']) {
+                unset($body['templateId']);
+            }
+        } else {
+            $endpoint = 'contacts';
+        }
+
+        $this->brevo_api_call($endpoint, array(
+            'method' => 'POST',
+            'body' => json_encode($body)
         ));
     }
 
@@ -984,6 +1142,9 @@ class WPUNewsletter {
             if (isset($_POST['wpunewsletter_mclist_id'])) {
                 $extra_args['mclist_id'] = esc_html($_POST['wpunewsletter_mclist_id']);
             }
+            if (isset($_POST['wpunewsletter_brevolist_id'])) {
+                $extra_args['brevolist_id'] = esc_html($_POST['wpunewsletter_brevolist_id']);
+            }
             if ($extra !== false) {
                 $subscription = $this->register_mail($_POST['wpunewsletter_email'], $send_confirmation_mail, $check_subscription, $extra, $extra_args);
                 if (!$subscription) {
@@ -1039,6 +1200,14 @@ class WPUNewsletter {
                 break;
             case 'email':
                 $value = !filter_var($value, FILTER_VALIDATE_EMAIL) ? '' : $value;
+                break;
+            case 'select':
+            case 'radio':
+                if (!empty($field['options']) && !array_key_exists($value, $field['options'])) {
+                    $value = '';
+                } else {
+                    $value = esc_html($value);
+                }
                 break;
             default:
                 $value = esc_html($value);
@@ -1105,6 +1274,16 @@ class WPUNewsletter {
         if ($id == 'wpunewsletter_mailchimp_apikey') {
             $html .= '<small style="display:block">';
             $html .= sprintf(__('Find your <a target="_blank" href="%s">API Key here</a>.', 'wpunewsletter'), 'https://admin.mailchimp.com/account/api/');
+            $html .= '</small>';
+        }
+        if ($id == 'wpunewsletter_brevo_listid') {
+            $html .= '<small style="display:block">';
+            $html .= sprintf(__('Find your list ID in the URL of your Brevo list. Example: The list ID for the url %s is %s', 'wpunewsletter'), 'https://app.brevo.com/contact/list-listing/id/6', '<strong>6</strong>');
+            $html .= '</small>';
+        }
+        if ($id == 'wpunewsletter_brevo_apikey') {
+            $html .= '<small style="display:block">';
+            $html .= sprintf(__('Find your <a target="_blank" href="%s">API Key here</a>.', 'wpunewsletter'), 'https://app.brevo.com/settings/keys/api');
             $html .= '</small>';
         }
         $html .= '</p>';
@@ -1189,6 +1368,20 @@ class WPUNewsletter {
         }
         echo '</div>';
 
+        echo '<hr /><h3>' . __('Brevo', 'wpunewsletter') . '</h3>';
+        echo $this->form_item__checkbox('wpunewsletter_brevo_active', __('Use Brevo', 'wpunewsletter'));
+        $_brevoIsOpen = (get_option('wpunewsletter_brevo_active') == '1');
+        echo '<div id="wpunewsletter-brevo-detail" style="' . ($_brevoIsOpen ? '' : 'display: none;') . '">';
+        echo $this->form_item__checkbox('wpunewsletter_brevo_double_optin', __('Send confirmation email', 'wpunewsletter') . ' (' . __('Via Brevo', 'wpunewsletter') . ')');
+        echo $this->form_item__text('wpunewsletter_brevo_apikey', __('API Key', 'wpunewsletter'));
+        $brevo_lists = get_option('wpunewsletter__brevo__lists');
+        if (is_array($brevo_lists)) {
+            echo $this->form_item__select('wpunewsletter_brevo_listid', __('List ID', 'wpunewsletter'), $brevo_lists);
+        } else {
+            echo $this->form_item__text('wpunewsletter_brevo_listid', __('List ID', 'wpunewsletter'));
+        }
+        echo '</div>';
+
         echo '<hr />';
         echo wp_nonce_field('wpunewsletter_settings', 'wpunewsletter_settings_nonce');
         echo '<p>';
@@ -1219,7 +1412,9 @@ class WPUNewsletter {
             'wpunewsletter_checkbox_comments',
             'wpunewsletter_autodelete',
             'wpunewsletter_mailchimp_active',
-            'wpunewsletter_mailchimp_double_optin'
+            'wpunewsletter_mailchimp_double_optin',
+            'wpunewsletter_brevo_active',
+            'wpunewsletter_brevo_double_optin'
         );
         foreach ($checkbox_fields as $field) {
             update_option($field, (isset($_POST[$field]) ? 1 : ''));
@@ -1240,7 +1435,9 @@ class WPUNewsletter {
             'wpunewsletter_useremailfromname' => '',
             'wpunewsletter_mailchimp_apikey' => '',
             'wpunewsletter_mailchimp_apidc' => '',
-            'wpunewsletter_mailchimp_listid' => ''
+            'wpunewsletter_mailchimp_listid' => '',
+            'wpunewsletter_brevo_apikey' => '',
+            'wpunewsletter_brevo_listid' => ''
         );
         foreach ($text_fields as $key => $var) {
             $value = get_option($key);
@@ -1257,6 +1454,15 @@ class WPUNewsletter {
                 $this->wpubasemessages->set_message('success_mailchimp', __('Success : Mailchimp IDs are correct', 'wpunewsletter'), 'updated');
             } else {
                 $this->wpubasemessages->set_message('error_mailchimp', __('Failure : Mailchimp IDs are not correct', 'wpunewsletter'), 'error');
+            }
+        }
+
+        if (isset($_POST['test']) && isset($_POST['wpunewsletter_brevo_active'])) {
+            $test = $this->brevo_test($_POST['wpunewsletter_brevo_apikey'], $_POST['wpunewsletter_brevo_listid']);
+            if ($test) {
+                $this->wpubasemessages->set_message('success_brevo', __('Success : Brevo IDs are correct', 'wpunewsletter'), 'updated');
+            } else {
+                $this->wpubasemessages->set_message('error_brevo', __('Failure : Brevo IDs are not correct', 'wpunewsletter'), 'error');
             }
         }
     }

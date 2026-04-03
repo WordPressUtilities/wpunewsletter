@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
-"POT-Creation-Date: 2024-05-12 18:46+0200\n"
+"POT-Creation-Date: 2026-04-03 10:32+0200\n"
 "PO-Revision-Date: \n"
 "Last-Translator: Darklg <darklg.blog@gmail.com>\n"
 "Language-Team: \n"
@@ -9,77 +9,81 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Generator: Poedit 3.4.2\n"
+"X-Generator: Poedit 3.9\n"
 "X-Poedit-SourceCharset: UTF-8\n"
 "X-Poedit-Basepath: .\n"
 "X-Poedit-KeywordsList: __;_e;esc_html__;esc_attr_e\n"
 "X-Poedit-SearchPath-0: ../.\n"
 
-#: .././inc/WPUBaseAdminDatas/WPUBaseAdminDatas.php:557
-#: .././inc/WPUBaseAdminDatas/WPUBaseAdminDatas.php:803
+#: .././inc/WPUBaseAdminDatas/WPUBaseAdminDatas.php:599
+#: .././inc/WPUBaseAdminDatas/WPUBaseAdminDatas.php:838
 msgid "New Post"
 msgstr "Nouvel article"
 
-#: .././inc/WPUBaseAdminDatas/WPUBaseAdminDatas.php:559
+#: .././inc/WPUBaseAdminDatas/WPUBaseAdminDatas.php:601
 msgid "Back"
 msgstr "Retour"
 
-#: .././inc/WPUBaseAdminDatas/WPUBaseAdminDatas.php:578
+#: .././inc/WPUBaseAdminDatas/WPUBaseAdminDatas.php:620
 msgid "No"
 msgstr "Non"
 
-#: .././inc/WPUBaseAdminDatas/WPUBaseAdminDatas.php:579
+#: .././inc/WPUBaseAdminDatas/WPUBaseAdminDatas.php:621
 msgid "Yes"
 msgstr "Oui"
 
-#: .././inc/WPUBaseAdminDatas/WPUBaseAdminDatas.php:593
+#: .././inc/WPUBaseAdminDatas/WPUBaseAdminDatas.php:636
 msgid "Submit"
 msgstr "Envoyer"
 
-#: .././inc/WPUBaseAdminDatas/WPUBaseAdminDatas.php:766
+#: .././inc/WPUBaseAdminDatas/WPUBaseAdminDatas.php:798
 #, php-format
 msgid "Items %s - %s"
 msgstr "Articles %s - %s"
 
-#: .././inc/WPUBaseAdminDatas/WPUBaseAdminDatas.php:779
+#: .././inc/WPUBaseAdminDatas/WPUBaseAdminDatas.php:813
 #, php-format
 msgid "<strong>Filter :</strong> %s • <strong>Value :</strong> %s"
 msgstr "<strong>Filtre:</strong> %s • <strong>Valeur :</strong> %s"
 
-#: .././inc/WPUBaseAdminDatas/WPUBaseAdminDatas.php:780
+#: .././inc/WPUBaseAdminDatas/WPUBaseAdminDatas.php:814
 msgid "Reset"
 msgstr "Réinitialiser"
 
-#: .././inc/WPUBaseAdminDatas/WPUBaseAdminDatas.php:789
-#: .././wpunewsletter.php:388
+#: .././inc/WPUBaseAdminDatas/WPUBaseAdminDatas.php:824
+#: .././wpunewsletter.php:395
 msgid "Search"
 msgstr "Rechercher"
 
-#: .././inc/WPUBaseAdminDatas/WPUBaseAdminDatas.php:791
+#: .././inc/WPUBaseAdminDatas/WPUBaseAdminDatas.php:826
 msgid "Clear"
 msgstr "Vider"
 
-#: .././inc/WPUBaseAdminDatas/WPUBaseAdminDatas.php:848
+#: .././inc/WPUBaseAdminDatas/WPUBaseAdminDatas.php:885
 msgid "Show more details"
 msgstr "Afficher plus de détails"
 
-#: .././inc/WPUBaseAdminDatas/WPUBaseAdminDatas.php:854
+#: .././inc/WPUBaseAdminDatas/WPUBaseAdminDatas.php:891
 msgid "Edit"
 msgstr "Modifier"
 
-#: .././inc/WPUBaseAdminDatas/WPUBaseAdminDatas.php:854
+#: .././inc/WPUBaseAdminDatas/WPUBaseAdminDatas.php:891
 msgid "View"
 msgstr "Voir"
 
-#: .././inc/WPUBaseAdminDatas/WPUBaseAdminDatas.php:861
+#: .././inc/WPUBaseAdminDatas/WPUBaseAdminDatas.php:899
 msgid "Delete"
 msgstr "Supprimer"
 
-#: .././inc/WPUBaseAdminDatas/WPUBaseAdminDatas.php:869
+#: .././inc/WPUBaseAdminDatas/WPUBaseAdminDatas.php:901
+msgid "Delete filtered lines"
+msgstr "Supprimer les lignes filtrées"
+
+#: .././inc/WPUBaseAdminDatas/WPUBaseAdminDatas.php:912
 msgid "Export all"
 msgstr "Tout exporter"
 
-#: .././inc/WPUBaseAdminDatas/WPUBaseAdminDatas.php:871
+#: .././inc/WPUBaseAdminDatas/WPUBaseAdminDatas.php:914
 msgid "Export filtered view"
 msgstr "Exporter la vue filtrée"
 
@@ -95,7 +99,7 @@ msgstr "Titre :"
 msgid "Text:"
 msgstr "Texte :"
 
-#: .././inc/widget.php:47 .././wpunewsletter.php:410
+#: .././inc/widget.php:47 .././wpunewsletter.php:417
 msgid "Email"
 msgstr "E-Mail"
 
@@ -107,171 +111,171 @@ msgstr "Votre adresse email"
 msgid "Register"
 msgstr "S'inscrire"
 
-#: .././wpunewsletter.php:225
+#: .././wpunewsletter.php:232
 msgid "Allow subscriptions to a newsletter."
 msgstr "Offre des abonnements à une newsletter."
 
-#: .././wpunewsletter.php:294
+#: .././wpunewsletter.php:301
 msgid "Latest subscribers"
 msgstr "Derniers abonnés"
 
-#: .././wpunewsletter.php:313 .././wpunewsletter.php:401
+#: .././wpunewsletter.php:320 .././wpunewsletter.php:408
 msgid "No subscriber for now."
 msgstr "Aucun abonné pour le moment."
 
-#: .././wpunewsletter.php:336
+#: .././wpunewsletter.php:343
 msgid "Newsletter - Subscribers"
 msgstr "Newsletter - Abonnés"
 
-#: .././wpunewsletter.php:336 .././wpunewsletter.php:560
-#: .././wpunewsletter.php:712
+#: .././wpunewsletter.php:343 .././wpunewsletter.php:567
+#: .././wpunewsletter.php:719
 msgid "Subscribers"
 msgstr "Abonnés"
 
-#: .././wpunewsletter.php:337
+#: .././wpunewsletter.php:344
 msgid "Newsletter - Export"
 msgstr "Newsletter - Exporter"
 
-#: .././wpunewsletter.php:337
+#: .././wpunewsletter.php:344
 msgid "Export"
 msgstr "Exporter"
 
-#: .././wpunewsletter.php:340
+#: .././wpunewsletter.php:347
 msgid "Newsletter - Import"
 msgstr "Newsletter - Importer"
 
-#: .././wpunewsletter.php:340
+#: .././wpunewsletter.php:347
 msgid "Import"
 msgstr "Importer"
 
-#: .././wpunewsletter.php:343
+#: .././wpunewsletter.php:350
 msgid "Newsletter - Settings"
 msgstr "Newsletter - Réglages"
 
-#: .././wpunewsletter.php:343 .././wpunewsletter.php:713
+#: .././wpunewsletter.php:350 .././wpunewsletter.php:720
 msgid "Settings"
 msgstr "Réglages"
 
-#: .././wpunewsletter.php:391
+#: .././wpunewsletter.php:398
 msgid "Cancel"
 msgstr "Annuler"
 
-#: .././wpunewsletter.php:395
+#: .././wpunewsletter.php:402
 #, php-format
 msgid "Subscribers list : %s"
 msgstr "Liste des abonnés : %s"
 
-#: .././wpunewsletter.php:409
+#: .././wpunewsletter.php:416
 msgid "ID"
 msgstr "ID"
 
-#: .././wpunewsletter.php:414
+#: .././wpunewsletter.php:421
 msgid "Locale"
 msgstr "Langue"
 
-#: .././wpunewsletter.php:415
+#: .././wpunewsletter.php:422
 msgid "Date"
 msgstr "Date"
 
-#: .././wpunewsletter.php:416
+#: .././wpunewsletter.php:423
 msgid "Valid"
 msgstr "Valide"
 
-#: .././wpunewsletter.php:439
+#: .././wpunewsletter.php:446
 msgid "Delete selected lines"
 msgstr "Supprimer les lignes sélectionnées"
 
-#: .././wpunewsletter.php:481
+#: .././wpunewsletter.php:488
 #, php-format
 msgid "Mail suppressions : %s"
 msgstr "Mails supprimés : %s"
 
-#: .././wpunewsletter.php:496
+#: .././wpunewsletter.php:503
 msgid "Addresses to import:"
 msgstr "Adresses à importer :"
 
-#: .././wpunewsletter.php:499
+#: .././wpunewsletter.php:506
 msgid "Import addresses"
 msgstr "Importer des adresses"
 
-#: .././wpunewsletter.php:514
+#: .././wpunewsletter.php:521
 #, php-format
 msgid "Mail insertions : %s"
 msgstr "Insertions de mails : %s"
 
-#: .././wpunewsletter.php:516
+#: .././wpunewsletter.php:523
 msgid "No mail insertions "
 msgstr "Aucune insertion de mail "
 
-#: .././wpunewsletter.php:562 .././wpunewsletter.php:575
-#: .././wpunewsletter.php:595
+#: .././wpunewsletter.php:569 .././wpunewsletter.php:582
+#: .././wpunewsletter.php:602
 msgid "Addresses to export:"
 msgstr "Adresses à exporter :"
 
-#: .././wpunewsletter.php:564
+#: .././wpunewsletter.php:571
 msgid "Only valid"
 msgstr "Seulement les validées"
 
-#: .././wpunewsletter.php:565 .././wpunewsletter.php:577
+#: .././wpunewsletter.php:572 .././wpunewsletter.php:584
 msgid "All"
 msgstr "Toutes"
 
-#: .././wpunewsletter.php:568 .././wpunewsletter.php:587
-#: .././wpunewsletter.php:606
+#: .././wpunewsletter.php:575 .././wpunewsletter.php:594
+#: .././wpunewsletter.php:613
 msgid "Export addresses"
 msgstr "Exporter les adresses"
 
-#: .././wpunewsletter.php:573
+#: .././wpunewsletter.php:580
 msgid "Users"
 msgstr "Membres"
 
-#: .././wpunewsletter.php:593
+#: .././wpunewsletter.php:600
 msgid "Custom"
 msgstr "Personnalisé"
 
-#: .././wpunewsletter.php:953
+#: .././wpunewsletter.php:1094
 msgid "This is not an email address."
 msgstr "Il ne s’agit pas d’une adresse e-mail."
 
-#: .././wpunewsletter.php:958
+#: .././wpunewsletter.php:1099
 msgid "You need to accept the conditions."
 msgstr "Vous devez accepter les conditions."
 
-#: .././wpunewsletter.php:964
+#: .././wpunewsletter.php:1105
 msgid "The form is invalid."
 msgstr "Le formulaire n’est pas valide."
 
-#: .././wpunewsletter.php:970
+#: .././wpunewsletter.php:1111
 msgid "The form is invalid. Is Javascript disabled on your computer ?"
 msgstr ""
 "Le formulaire n’est pas valide. JavaScript est-il désactivé sur votre "
 "ordinateur?"
 
-#: .././wpunewsletter.php:975
+#: .././wpunewsletter.php:1116
 msgid "This mail is already registered"
 msgstr "Cette adresse mail est déjà inscrite"
 
-#: .././wpunewsletter.php:988
+#: .././wpunewsletter.php:1132
 msgid "This mail can't be registered"
 msgstr "Cette adresse mail ne peut pas être inscrite"
 
-#: .././wpunewsletter.php:990
+#: .././wpunewsletter.php:1134
 msgid "This mail is now registered"
 msgstr "Cette adresse mail est désormais inscrite"
 
-#: .././wpunewsletter.php:993
+#: .././wpunewsletter.php:1137
 msgid "Some fields are missing"
 msgstr "Certains champs sont manquants"
 
-#: .././wpunewsletter.php:1062
+#: .././wpunewsletter.php:1206
 msgid "Your subscription couldn't be confirmed"
 msgstr "Votre abonnement n'a pas pu être confirmé"
 
-#: .././wpunewsletter.php:1076
+#: .././wpunewsletter.php:1220
 msgid "Your subscription has been successfully confirmed"
 msgstr "Votre abonnement a été confirmé avec succès"
 
-#: .././wpunewsletter.php:1100
+#: .././wpunewsletter.php:1244
 #, php-format
 msgid ""
 "Find your DC in the URL of your Mailchimp account. Example: The DC for the "
@@ -280,16 +284,25 @@ msgstr ""
 "Trouvez votre DC dans l’URL de votre compte Mailchimp. Exemple : Le DC de "
 "l’URL %s est %s"
 
-#: .././wpunewsletter.php:1105
+#: .././wpunewsletter.php:1249 .././wpunewsletter.php:1259
 #, php-format
 msgid "Find your <a target=\"_blank\" href=\"%s\">API Key here</a>."
 msgstr "Trouvez votre <a target=\"_blank\" href=\"%s\">clé API ici</a>."
 
-#: .././wpunewsletter.php:1129
+#: .././wpunewsletter.php:1254
+#, php-format
+msgid ""
+"Find your list ID in the URL of your Brevo list. Example: The list ID for "
+"the url %s is %s"
+msgstr ""
+"Retrouvez l'identifiant de votre liste dans l'URL de votre liste Brevo. "
+"Exemple : l'identifiant de la liste pour l'URL %s est %s"
+
+#: .././wpunewsletter.php:1283
 msgid "Required fields"
 msgstr "Champs obligatoires"
 
-#: .././wpunewsletter.php:1135
+#: .././wpunewsletter.php:1289
 msgid ""
 "Forms with only an email address will not work on a list with required "
 "fields."
@@ -297,108 +310,130 @@ msgstr ""
 "Les formulaires avec seulement une adresse e-mail ne fonctionneront pas sur "
 "une liste avec des champs obligatoires."
 
-#: .././wpunewsletter.php:1158
+#: .././wpunewsletter.php:1312
 msgid "Register in comments"
 msgstr "Inscription dans les commentaires"
 
-#: .././wpunewsletter.php:1160
+#: .././wpunewsletter.php:1314
 msgid "GPRD"
 msgstr "RGPD"
 
-#: .././wpunewsletter.php:1161
+#: .././wpunewsletter.php:1315
 msgid "Add a GPRD checkbox under form."
 msgstr "Ajoutez une case à cocher RGPD sous le formulaire."
 
-#: .././wpunewsletter.php:1162
+#: .././wpunewsletter.php:1316
 msgid "GPRD checkbox text"
 msgstr "Texte de la case à cocher RGPD"
 
-#: .././wpunewsletter.php:1163
+#: .././wpunewsletter.php:1317
 msgid "GPRD text under newsletter"
 msgstr "Texte RGPD sous la newsletter"
 
-#: .././wpunewsletter.php:1168 .././wpunewsletter.php:1179
+#: .././wpunewsletter.php:1322 .././wpunewsletter.php:1333
+#: .././wpunewsletter.php:1348
 msgid "Send confirmation email"
 msgstr "Envoyer un email de confirmation"
 
-#: .././wpunewsletter.php:1168
+#: .././wpunewsletter.php:1322
 msgid "Via WordPress"
 msgstr "Via WordPress"
 
-#: .././wpunewsletter.php:1169
+#: .././wpunewsletter.php:1323
 #, php-format
 msgid "Auto-delete subscriptions after %s years"
 msgstr "Supprimer automatiquement les abonnements après %s ans"
 
-#: .././wpunewsletter.php:1171
+#: .././wpunewsletter.php:1325
 msgid "Outgoing emails"
 msgstr "Emails sortants"
 
-#: .././wpunewsletter.php:1172
+#: .././wpunewsletter.php:1326
 msgid "From name"
 msgstr "Nom de l'expéditeur"
 
-#: .././wpunewsletter.php:1173
+#: .././wpunewsletter.php:1327
 msgid "From address"
 msgstr "Adresse de l'expéditeur"
 
-#: .././wpunewsletter.php:1175
+#: .././wpunewsletter.php:1329
 msgid "Mailchimp"
 msgstr "Mailchimp"
 
-#: .././wpunewsletter.php:1176
+#: .././wpunewsletter.php:1330
 msgid "Use Mailchimp"
 msgstr "Utiliser Mailchimp"
 
-#: .././wpunewsletter.php:1179
+#: .././wpunewsletter.php:1333
 msgid "Via Mailchimp"
 msgstr "Via Mailchimp"
 
-#: .././wpunewsletter.php:1180
+#: .././wpunewsletter.php:1334
 msgid "DC"
 msgstr "DC"
 
-#: .././wpunewsletter.php:1181
+#: .././wpunewsletter.php:1335 .././wpunewsletter.php:1349
 msgid "API Key"
 msgstr "Clé API"
 
-#: .././wpunewsletter.php:1184 .././wpunewsletter.php:1186
+#: .././wpunewsletter.php:1338 .././wpunewsletter.php:1340
+#: .././wpunewsletter.php:1352 .././wpunewsletter.php:1354
 msgid "List ID"
 msgstr "ID de la liste"
 
-#: .././wpunewsletter.php:1193
+#: .././wpunewsletter.php:1344
+msgid "Brevo"
+msgstr "Brevo"
+
+#: .././wpunewsletter.php:1345
+msgid "Use Brevo"
+msgstr "Utiliser Brevo"
+
+#: .././wpunewsletter.php:1348
+msgid "Via Brevo"
+msgstr "Via Brevo"
+
+#: .././wpunewsletter.php:1361
 msgid "Update and test options"
 msgstr "Mettre à jour et tester les options"
 
-#: .././wpunewsletter.php:1194
+#: .././wpunewsletter.php:1362
 msgid "Update options"
 msgstr "Mettre à jour les options"
 
-#: .././wpunewsletter.php:1250
+#: .././wpunewsletter.php:1422
 msgid "Success : Updated options"
 msgstr "Succès : Mise à jour des options"
 
-#: .././wpunewsletter.php:1255
+#: .././wpunewsletter.php:1427
 msgid "Success : Mailchimp IDs are correct"
 msgstr "Succès : Les IDs Mailchimp sont corrects"
 
-#: .././wpunewsletter.php:1257
+#: .././wpunewsletter.php:1429
 msgid "Failure : Mailchimp IDs are not correct"
 msgstr "Échec : Les IDs Mailchimp ne sont pas corrects"
 
-#: .././wpunewsletter.php:1296
+#: .././wpunewsletter.php:1436
+msgid "Success : Brevo IDs are correct"
+msgstr "Succès : les identifiants Brevo sont corrects"
+
+#: .././wpunewsletter.php:1438
+msgid "Failure : Brevo IDs are not correct"
+msgstr "Échec : les identifiants Brevo ne sont pas corrects"
+
+#: .././wpunewsletter.php:1477
 msgid "Register to our newsletter"
 msgstr "Abonnez-vous à notre newsletter"
 
-#: .././wpunewsletter.php:1427
+#: .././wpunewsletter.php:1608
 msgid "Confirm your subscription to our newsletter"
 msgstr "Confirmez votre abonnement à notre newsletter"
 
-#: .././wpunewsletter.php:1429
+#: .././wpunewsletter.php:1610
 msgid "Hi !"
 msgstr "Bonjour !"
 
-#: .././wpunewsletter.php:1430
+#: .././wpunewsletter.php:1611
 msgid ""
 "Please click on the link below to confirm your subscription to our "
 "newsletter:"
@@ -406,7 +441,7 @@ msgstr ""
 "Merci de cliquer sur le lien ci-dessous pour confirmer votre abonnement à "
 "notre newsletter :"
 
-#: .././wpunewsletter.php:1431
+#: .././wpunewsletter.php:1612
 msgid "Thank you !"
 msgstr "Merci !"
 

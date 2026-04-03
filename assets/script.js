@@ -9,4 +9,10 @@ jQuery(document).ready(function() {
         e.preventDefault();
         jQuery('#wpunewsletter-mailchimp-detail').toggle();
     });
+
+    // Toggle brevo settings
+    jQuery('#form_item__wpunewsletter_brevo_active').on('change', function(e){
+        e.preventDefault();
+        jQuery('#wpunewsletter-brevo-detail').toggle();
+    });
 });

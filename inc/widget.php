@@ -48,6 +48,7 @@ $text = !empty($instance['text']) ? $instance['text'] : '';
             'content_placeholder' => __('Your email address', 'wpunewsletter'),
             'content_button' => __('Register', 'wpunewsletter'),
             'mailchimp_list_id' => '',
+            'brevo_list_id' => '',
             'form_has_wrapper' => true,
             'fields_has_wrapper' => true,
             'messages_over_form' => true,
@@ -136,6 +137,9 @@ $text = !empty($instance['text']) ? $instance['text'] : '';
         if (isset($instance['mailchimp_list_id']) && $instance['mailchimp_list_id']) {
             $main_newsletter_field .= '<input type="hidden" name="wpunewsletter_mclist_id" value="' . md5('wpu_' . $instance['mailchimp_list_id']) . '" />';
         }
+        if (isset($instance['brevo_list_id']) && $instance['brevo_list_id']) {
+            $main_newsletter_field .= '<input type="hidden" name="wpunewsletter_brevolist_id" value="' . md5('wpu_' . $instance['brevo_list_id']) . '" />';
+        }
         $main_newsletter_field .= ($widg_main_field_have_wrapper && $widg_fields_has_wrapper) ? '</p>' : '';
         $main_newsletter_field .= apply_filters('wpunewsletter__after_main_field', '', $instance);
 
@@ -179,6 +183,22 @@ $text = !empty($instance['text']) ? $instance['text'] : '';
             switch ($field['type']) {
             case 'checkbox':
                 $default_widget_content .= $_label_before . '<input class="' . $field['field_classname'] . ' " type="checkbox" ' . $_idname . ' ' . ($field_value == '1' ? 'checked="checked"' : '') . ' value="1" /> ' . '<span class="label-main">' . $field_name . '</span>' . $_label_after;
+                break;
+            case 'select':
+                $default_widget_content .= $_label_before . $field_name . $_label_after;
+                $default_widget_content .= ' <select class="' . $field['field_classname'] . '" ' . $_idname . '>';
+                $default_widget_content .= '<option value="">' . $field['placeholder'] . '</option>';
+                foreach ($field['options'] as $opt_value => $opt_label) {
+                    $default_widget_content .= '<option value="' . esc_attr($opt_value) . '"' . selected($field_value, $opt_value, false) . '>' . esc_html($opt_label) . '</option>';
+                }
+                $default_widget_content .= '</select>';
+                break;
+            case 'radio':
+                $default_widget_content .= $_label_before . $field_name . $_label_after;
+                foreach ($field['options'] as $opt_value => $opt_label) {
+                    $opt_id = $fields_prefix . $_f_id . '_' . $opt_value;
+                    $default_widget_content .= ' <label for="' . $opt_id . '"><input type="radio" id="' . $opt_id . '" name="' . $_f_id . '" value="' . esc_attr($opt_value) . '"' . checked($field_value, $opt_value, false) . ($field['required'] ? ' required="required"' : '') . ' /> ' . esc_html($opt_label) . '</label>';
+                }
                 break;
             default:
 
