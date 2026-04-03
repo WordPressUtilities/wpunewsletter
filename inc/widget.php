@@ -116,7 +116,7 @@ $text = !empty($instance['text']) ? $instance['text'] : '';
 
         /* - FORM -  */
 
-        $default_widget_content = '<form class="wpunewsletter-form ' . $widg_classes_form . '" id="' . $widg_form_id . '" action="" method="post">';
+        $default_widget_content = '<form class="wpunewsletter-form ' . $widg_classes_form . '" id="' . $widg_form_id . '" action="" method="post" data-nosnippet>';
         $default_widget_content .= '<script>if(!window.wpunewsletter_forms){window.wpunewsletter_forms=[];}</script>';
         $default_widget_content .= '<script>window.wpunewsletter_forms[\'' . $widg_form_id . '\']=' . json_encode($js_form_settings) . ';</script>';
 
@@ -130,7 +130,7 @@ $text = !empty($instance['text']) ? $instance['text'] : '';
         $main_newsletter_field = '';
 
         $main_newsletter_field .= apply_filters('wpunewsletter__before_main_field', '', $instance);
-        $main_newsletter_field .= ($widg_main_field_have_wrapper && $widg_fields_has_wrapper) ? '<p class="' . $widg_classes_fieldwrapper . '">' : '';
+        $main_newsletter_field .= ($widg_main_field_have_wrapper && $widg_fields_has_wrapper) ? '<p class="wpunewsletter-form__main-field-wrapper ' . $widg_classes_fieldwrapper . '">' : '';
         $main_newsletter_field .= '<label class="' . $widg_classes_label . '" for="' . $fields_prefix . 'wpunewsletter_email">' . $widg_content_label . '</label>';
         $main_newsletter_field .= '<input class="' . $widg_classes_mainfield . '" type="email" name="wpunewsletter_email" placeholder="' . $widg_content_placeholder . '" id="' . $fields_prefix . 'wpunewsletter_email" value="" ' . (is_admin() ? '' : 'required') . ' />';
         $main_newsletter_field .= '<input type="hidden" name="wpunewsletter_email_hid" id="' . $fields_prefix . 'wpunewsletter_email_hid" />';
@@ -197,7 +197,7 @@ $text = !empty($instance['text']) ? $instance['text'] : '';
                 $default_widget_content .= $_label_before . $field_name . $_label_after;
                 foreach ($field['options'] as $opt_value => $opt_label) {
                     $opt_id = $fields_prefix . $_f_id . '_' . $opt_value;
-                    $default_widget_content .= ' <label for="' . $opt_id . '"><input type="radio" id="' . $opt_id . '" name="' . $_f_id . '" value="' . esc_attr($opt_value) . '"' . checked($field_value, $opt_value, false) . ($field['required'] ? ' required="required"' : '') . ' /> ' . esc_html($opt_label) . '</label>';
+                    $default_widget_content .= ' <label for="' . $opt_id . '"><input type="radio" id="' . $opt_id . '" name="' . $_f_id . '" value="' . esc_attr($opt_value) . '"' . checked($field_value, $opt_value, false) . ($field['required'] ? ' required="required"' : '') . ' /><span class="label-main">' . esc_html($opt_label) . '</span></label>';
                 }
                 break;
             default:
@@ -222,7 +222,7 @@ $text = !empty($instance['text']) ? $instance['text'] : '';
         }
         $default_widget_content .= '</form>';
         if (!empty($widg_gprdtext)) {
-            $default_widget_content .= '<div class="wpunewsletter-gdprtext">' . $widg_gprdtext . '</div>';
+            $default_widget_content .= '<div class="wpunewsletter-gdprtext" data-nosnippet>' . $widg_gprdtext . '</div>';
         }
 
         echo $args['before_widget'];
