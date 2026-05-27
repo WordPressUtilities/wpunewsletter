@@ -5,7 +5,7 @@ Plugin Name: WP Utilities Newsletter
 Plugin URI: https://github.com/WordPressUtilities/wpunewsletter
 Update URI: https://github.com/WordPressUtilities/wpunewsletter
 Description: Allow subscriptions to a newsletter.
-Version: 4.0.1
+Version: 4.0.2
 Author: Darklg
 Author URI: https://darklg.me/
 Text Domain: wpunewsletter
@@ -47,7 +47,7 @@ class WPUNewsletter {
     public $plugin_dir;
     public $plugin_id;
     public $plugin_url;
-    public $plugin_version = '4.0.1';
+    public $plugin_version = '4.0.2';
     public $settings_update;
     public $table_name;
     public $table_name_raw;
@@ -755,7 +755,7 @@ class WPUNewsletter {
         }
 
         if (!$dc || !$api_key) {
-            error_log('Mailchimp API call error : missing API key or DC');
+            $this->set_message_error('Mailchimp API call error : missing API key or DC');
             return false;
         }
 
@@ -897,7 +897,7 @@ class WPUNewsletter {
         }
 
         if (!$api_key) {
-            error_log('Brevo API call error : missing API key');
+            $this->set_message_error('Brevo API call error : missing API key');
             return false;
         }
 
@@ -920,11 +920,17 @@ class WPUNewsletter {
         }
 
         if (is_wp_error($response)) {
+            $this->set_message_error('Brevo API call error : ' . $response->get_error_message());
             return false;
         }
 
         $response = wp_remote_retrieve_body($response);
         $result = json_decode($response, true);
+
+        if (isset($result['code']) && isset($result['message'])) {
+            $this->set_message_error('Brevo API call error : ' . $result['code'] . ' - ' . $result['message']);
+            return false;
+        }
 
         return $result;
     }
@@ -1620,6 +1626,14 @@ class WPUNewsletter {
     /* ----------------------------------------------------------
       Utilities
     ---------------------------------------------------------- */
+
+    public function set_message_error($message) {
+        $message_id = 'error_' . md5($message);
+        if (is_admin()) {
+            $this->wpubasemessages->set_message($message_id, $message, 'error');
+        }
+        error_log($message);
+    }
 
     public function send_confirmation_email($email, $secretkey) {
         add_filter('wp_mail_content_type', array(&$this,
