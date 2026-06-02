@@ -20,14 +20,14 @@ class wpunewsletter_form extends WP_Widget {
         $title = !empty($instance['title']) ? $instance['title'] : esc_html__('New title', 'wpunewsletter');
         ?>
         <p>
-        <label for="<?php echo esc_attr($this->get_field_id('title')); ?>"><?php esc_attr_e('Title:', 'wpunewsletter');?></label>
+        <label for="<?php echo esc_attr($this->get_field_id('title')); ?>"><?php esc_attr_e('Title:', 'wpunewsletter'); ?></label>
         <input class="widefat" id="<?php echo esc_attr($this->get_field_id('title')); ?>" name="<?php echo esc_attr($this->get_field_name('title')); ?>" type="text" value="<?php echo esc_attr($title); ?>">
         </p>
         <?php
 $text = !empty($instance['text']) ? $instance['text'] : '';
         ?>
         <p>
-        <label for="<?php echo esc_attr($this->get_field_id('text')); ?>"><?php esc_attr_e('Text:', 'wpunewsletter');?></label>
+        <label for="<?php echo esc_attr($this->get_field_id('text')); ?>"><?php esc_attr_e('Text:', 'wpunewsletter'); ?></label>
         <input class="widefat" id="<?php echo esc_attr($this->get_field_id('text')); ?>" name="<?php echo esc_attr($this->get_field_name('text')); ?>" type="text" value="<?php echo esc_attr($text); ?>">
         </p>
         <?php
@@ -132,7 +132,7 @@ $text = !empty($instance['text']) ? $instance['text'] : '';
         $main_newsletter_field .= apply_filters('wpunewsletter__before_main_field', '', $instance);
         $main_newsletter_field .= ($widg_main_field_have_wrapper && $widg_fields_has_wrapper) ? '<p class="wpunewsletter-form__main-field-wrapper ' . $widg_classes_fieldwrapper . '">' : '';
         $main_newsletter_field .= '<label class="' . $widg_classes_label . '" for="' . $fields_prefix . 'wpunewsletter_email">' . $widg_content_label . '</label>';
-        $main_newsletter_field .= '<input class="' . $widg_classes_mainfield . '" type="email" name="wpunewsletter_email" placeholder="' . $widg_content_placeholder . '" id="' . $fields_prefix . 'wpunewsletter_email" value="" ' . (is_admin() ? '' : 'required') . ' />';
+        $main_newsletter_field .= '<input class="' . $widg_classes_mainfield . '" type="email" name="wpunewsletter_email" placeholder="' . esc_attr($widg_content_placeholder) . '" id="' . $fields_prefix . 'wpunewsletter_email" value="" ' . (is_admin() ? '' : 'required') . ' />';
         $main_newsletter_field .= '<input type="hidden" name="wpunewsletter_email_hid" id="' . $fields_prefix . 'wpunewsletter_email_hid" />';
         if (isset($instance['mailchimp_list_id']) && $instance['mailchimp_list_id']) {
             $main_newsletter_field .= '<input type="hidden" name="wpunewsletter_mclist_id" value="' . md5('wpu_' . $instance['mailchimp_list_id']) . '" />';
@@ -185,25 +185,25 @@ $text = !empty($instance['text']) ? $instance['text'] : '';
                 $default_widget_content .= $_label_before . '<input class="' . $field['field_classname'] . ' " type="checkbox" ' . $_idname . ' ' . ($field_value == '1' ? 'checked="checked"' : '') . ' value="1" /> ' . '<span class="label-main">' . $field_name . '</span>' . $_label_after;
                 break;
             case 'select':
-                $default_widget_content .= $_label_before . $field_name . $_label_after;
-                $default_widget_content .= ' <select class="' . $field['field_classname'] . '" ' . $_idname . '>';
-                $default_widget_content .= '<option value="">' . $field['placeholder'] . '</option>';
+                $default_widget_content .= $_label_before . esc_html($field_name) . $_label_after;
+                $default_widget_content .= ' <select class="' . esc_attr($field['field_classname']) . '" ' . $_idname . '>';
+                $default_widget_content .= '<option value="">' . esc_html($field['placeholder']) . '</option>';
                 foreach ($field['options'] as $opt_value => $opt_label) {
                     $default_widget_content .= '<option value="' . esc_attr($opt_value) . '"' . selected($field_value, $opt_value, false) . '>' . esc_html($opt_label) . '</option>';
                 }
                 $default_widget_content .= '</select>';
                 break;
             case 'radio':
-                $default_widget_content .= $_label_before . $field_name . $_label_after;
+                $default_widget_content .= $_label_before . esc_html($field_name) . $_label_after;
                 foreach ($field['options'] as $opt_value => $opt_label) {
                     $opt_id = $fields_prefix . $_f_id . '_' . $opt_value;
-                    $default_widget_content .= ' <label for="' . $opt_id . '"><input type="radio" id="' . $opt_id . '" name="' . $_f_id . '" value="' . esc_attr($opt_value) . '"' . checked($field_value, $opt_value, false) . ($field['required'] ? ' required="required"' : '') . ' /><span class="label-main">' . esc_html($opt_label) . '</span></label>';
+                    $default_widget_content .= ' <label for="' . esc_attr($opt_id) . '"><input type="radio" id="' . esc_attr($opt_id) . '" name="' . esc_attr($_f_id) . '" value="' . esc_attr($opt_value) . '"' . checked($field_value, $opt_value, false) . ($field['required'] ? ' required="required"' : '') . ' /><span class="label-main">' . esc_html($opt_label) . '</span></label>';
                 }
                 break;
             default:
 
                 // text / email / url
-                $default_widget_content .= $_label_before . $field_name . $_label_after . ' <input ' . $field['field_classname'] . ' type="' . $field['type'] . '" ' . $_idname . ' value="" />';
+                $default_widget_content .= $_label_before . esc_html($field_name) . $_label_after . ' <input class="' . esc_attr($field['field_classname']) . '" type="' . esc_attr($field['type']) . '" ' . $_idname . ' value="" />';
             }
             $default_widget_content .= $widg_fields_has_wrapper ? '</p>' : '';
         }
@@ -213,7 +213,7 @@ $text = !empty($instance['text']) ? $instance['text'] : '';
         }
 
         $default_widget_content .= apply_filters('wpunewsletter__before_submit_button', '', $instance);
-        $default_widget_content .= '<button type="submit" class="' . $widg_classes_button . '">' . $widg_content_button . '</button>';
+        $default_widget_content .= '<button type="submit" class="' . esc_attr($widg_classes_button) . '">' . $widg_content_button . '</button>';
         $default_widget_content .= apply_filters('wpunewsletter__after_submit_button', '', $instance);
 
         $default_widget_content .= $widg_form_has_wrapper ? '</div>' : '';

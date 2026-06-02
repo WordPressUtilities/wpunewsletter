@@ -5,7 +5,7 @@ Plugin Name: WP Utilities Newsletter
 Plugin URI: https://github.com/WordPressUtilities/wpunewsletter
 Update URI: https://github.com/WordPressUtilities/wpunewsletter
 Description: Allow subscriptions to a newsletter.
-Version: 4.0.2
+Version: 4.0.3
 Author: Darklg
 Author URI: https://darklg.me/
 Text Domain: wpunewsletter
@@ -47,7 +47,7 @@ class WPUNewsletter {
     public $plugin_dir;
     public $plugin_id;
     public $plugin_url;
-    public $plugin_version = '4.0.2';
+    public $plugin_version = '4.0.3';
     public $settings_update;
     public $table_name;
     public $table_name_raw;
@@ -314,14 +314,17 @@ class WPUNewsletter {
         $results = wp_cache_get($this->dash_cache_id);
         if ($results === false) {
             global $wpdb;
-            $results = $wpdb->get_results("SELECT id,email FROM " . $this->table_name . " ORDER BY id DESC LIMIT 0, 10");
+            $results = $wpdb->get_results("SELECT id,email,date_register FROM " . $this->table_name . " ORDER BY id DESC LIMIT 0, 10");
             wp_cache_set($this->dash_cache_id, $results, '', 0);
         }
 
         if (!empty($results)) {
+            echo '<ul>';
             foreach ($results as $result) {
-                echo '<p>' . $result->id . ' - ' . $result->email . '</p>';
+                $time_diff = human_time_diff(strtotime($result->date_register), current_time('timestamp'));
+                echo '<li>' . esc_html($result->email) . ' - ' . sprintf(__('%s ago', 'wpunewsletter'), $time_diff) . '</li>';
             }
+            echo '</ul>';
         } else {
             echo '<p>' . __('No subscriber for now.', 'wpunewsletter') . '</p>';
         }
@@ -442,9 +445,9 @@ class WPUNewsletter {
                 foreach ($this->extra_fields as $id => $field) {
                     echo '<td>' . (isset($result_extra[$id]) ? esc_html($result_extra[$id]) : '') . '</td>';
                 }
-                echo '<td>' . $result->locale . '</td>
-            <td>' . $result->date_register . '</td>
-            <td>' . $result->is_valid . '</td>
+                echo '<td>' . esc_html($result->locale) . '</td>
+            <td>' . esc_html($result->date_register) . '</td>
+            <td>' . esc_html($result->is_valid) . '</td>
             </tr></tbody>';
             }
             echo '</table>';
@@ -526,7 +529,7 @@ class WPUNewsletter {
             if ($nb_addresses > 0) {
                 $this->wpubasemessages->set_message('import_success', sprintf(__('Mail insertions : %s', 'wpunewsletter'), $nb_addresses), 'updated');
             } else {
-                $this->wpubasemessages->set_message('import_error', __('No mail insertions ', 'wpunewsletter'), 'error');
+                $this->wpubasemessages->set_message('import_error', __('No mail insertions', 'wpunewsletter'), 'error');
             }
         }
     }
@@ -1344,10 +1347,10 @@ class WPUNewsletter {
 
         echo $this->form_item__checkbox('wpunewsletter_checkbox_comments', __('Register in comments', 'wpunewsletter'));
 
-        echo '<hr /><h3>' . __('GPRD', 'wpunewsletter') . '</h3>';
-        echo $this->form_item__checkbox('wpunewsletter_gprdcheckbox_box', __('Add a GPRD checkbox under form.', 'wpunewsletter'));
-        echo $this->form_item__text('wpunewsletter_gprdcheckbox_text', __('GPRD checkbox text', 'wpunewsletter'));
-        echo $this->form_item__editor('wpunewsletter_gprdtext', __('GPRD text under newsletter', 'wpunewsletter'), array(
+        echo '<hr /><h3>' . __('GDPR', 'wpunewsletter') . '</h3>';
+        echo $this->form_item__checkbox('wpunewsletter_gprdcheckbox_box', __('Add a GDPR checkbox under form.', 'wpunewsletter'));
+        echo $this->form_item__text('wpunewsletter_gprdcheckbox_text', __('GDPR checkbox text', 'wpunewsletter'));
+        echo $this->form_item__editor('wpunewsletter_gprdtext', __('GDPR text under newsletter', 'wpunewsletter'), array(
             'media_buttons' => false,
             'teeny' => true,
             'textarea_rows' => 3
@@ -1524,7 +1527,6 @@ class WPUNewsletter {
         $comment_status = wp_get_comment_status($comment_id);
         if ($comment_status != 'approved') {
             update_comment_meta($comment_id, 'wpunewsletter_register', '2', true);
-            error_log($comment_status);
             return;
         }
 
@@ -1548,7 +1550,7 @@ class WPUNewsletter {
         }
         update_comment_meta($comment_id, 'wpunewsletter_register', '1', true);
         $comment_details = get_comment($comment_id);
-        if (isset($comment_details->comment_author_email) || is_email($comment_details->comment_author_email)) {
+        if (isset($comment_details->comment_author_email) && is_email($comment_details->comment_author_email)) {
             $this->register_mail($comment_details->comment_author_email, (get_option('wpunewsletter_send_confirmation_email') == 1), true, array());
         }
     }
